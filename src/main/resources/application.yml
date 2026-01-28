@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: testrail-mcp-server
+  main:
+    web-application-type: none
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        stdio: true
+        name: testrail-mcp-server
+        version: 1.0.0
+
+testrail:
+  base-url: ${TESTRAIL_URL:https://example.testrail.io}
+  username: ${TESTRAIL_USERNAME:}
+  api-key: ${TESTRAIL_API_KEY:}
+
+logging:
+  level:
+    root: WARN
+    io.github.testrail.mcp: ${TESTRAIL_LOG_LEVEL:INFO}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
