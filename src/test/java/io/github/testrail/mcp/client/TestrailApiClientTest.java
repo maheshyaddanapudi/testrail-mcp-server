@@ -497,4 +497,281 @@ class TestrailApiClientTest {
         assertThatThrownBy(() -> apiClient.getProject(1))
                 .isInstanceOf(TestrailApiException.class);
     }
+
+    // ==================== Additional Coverage Tests ====================
+
+    @Test
+    void updateProject_shouldUpdateProject() throws Exception {
+        Project expected = new Project();
+        expected.setId(1);
+        expected.setName("Updated Project");
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(expected))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "Updated Project");
+
+        Project result = apiClient.updateProject(1, data);
+
+        assertThat(result.getId()).isEqualTo(1);
+        assertThat(result.getName()).isEqualTo("Updated Project");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_project/1");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    @Test
+    void updateRun_shouldUpdateTestRun() throws Exception {
+        TestRun expected = new TestRun();
+        expected.setId(100);
+        expected.setName("Updated Run");
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(expected))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "Updated Run");
+
+        TestRun result = apiClient.updateRun(100, data);
+
+        assertThat(result.getId()).isEqualTo(100);
+        assertThat(result.getName()).isEqualTo("Updated Run");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_run/100");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    @Test
+    void deleteRun_shouldDeleteTestRun() throws Exception {
+        mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+
+        assertThatCode(() -> apiClient.deleteRun(100)).doesNotThrowAnyException();
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_run/100");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    @Test
+    void updateSection_shouldUpdateSection() throws Exception {
+        Section expected = new Section();
+        expected.setId(10);
+        expected.setName("Updated Section");
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(expected))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "Updated Section");
+
+        Section result = apiClient.updateSection(10, data);
+
+        assertThat(result.getId()).isEqualTo(10);
+        assertThat(result.getName()).isEqualTo("Updated Section");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_section/10");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    @Test
+    void moveSection_shouldMoveSection() throws Exception {
+        Section expected = new Section();
+        expected.setId(10);
+        expected.setParentId(5);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(expected))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("parent_id", 5);
+
+        Section result = apiClient.moveSection(10, data);
+
+        assertThat(result.getId()).isEqualTo(10);
+        assertThat(result.getParentId()).isEqualTo(5);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/move_section/10");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    @Test
+    void getResultsForRun_shouldReturnResults() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        List<Map<String, Object>> results = new ArrayList<>();
+        Map<String, Object> result1 = new HashMap<>();
+        result1.put("id", 1);
+        result1.put("test_id", 100);
+        result1.put("status_id", 1);
+        results.add(result1);
+        response.put("results", results);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<TestResult> resultList = apiClient.getResultsForRun(100, 10, 0);
+
+        assertThat(resultList).hasSize(1);
+        assertThat(resultList.get(0).getTestId()).isEqualTo(100);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_results_for_run/100?limit=10&offset=0");
+    }
+
+    @Test
+    void getResultsForRun_shouldHandleNullParameters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        response.put("results", new ArrayList<>());
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<TestResult> resultList = apiClient.getResultsForRun(100, null, null);
+
+        assertThat(resultList).isEmpty();
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_results_for_run/100");
+    }
+
+    @Test
+    void addResults_shouldAddMultipleResults() throws Exception {
+        // Response is a direct array, not wrapped in "results" field
+        List<Map<String, Object>> results = new ArrayList<>();
+        Map<String, Object> result1 = new HashMap<>();
+        result1.put("id", 1);
+        result1.put("test_id", 100);
+        result1.put("status_id", 1);
+        results.add(result1);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(results))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Map<String, Object>> resultsData = new ArrayList<>();
+        Map<String, Object> resultData = new HashMap<>();
+        resultData.put("test_id", 100);
+        resultData.put("status_id", 1);
+        resultsData.add(resultData);
+
+        List<TestResult> resultList = apiClient.addResults(100, resultsData);
+
+        assertThat(resultList).hasSize(1);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_results/100");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    @Test
+    void addResultsForCases_shouldAddResultsForSpecificCases() throws Exception {
+        // Response is a direct array, not wrapped in "results" field
+        List<Map<String, Object>> results = new ArrayList<>();
+        Map<String, Object> result1 = new HashMap<>();
+        result1.put("id", 1);
+        result1.put("case_id", 123);
+        result1.put("status_id", 1);
+        results.add(result1);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(results))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Map<String, Object>> resultsData = new ArrayList<>();
+        Map<String, Object> resultData = new HashMap<>();
+        resultData.put("case_id", 123);
+        resultData.put("status_id", 1);
+        resultsData.add(resultData);
+
+        List<TestResult> resultList = apiClient.addResultsForCases(100, resultsData);
+
+        assertThat(resultList).hasSize(1);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_results_for_cases/100");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    @Test
+    void getSections_shouldHandleAllParameters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        List<Map<String, Object>> sections = new ArrayList<>();
+        Map<String, Object> section1 = new HashMap<>();
+        section1.put("id", 1);
+        section1.put("name", "Section 1");
+        sections.add(section1);
+        response.put("sections", sections);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Section> resultList = apiClient.getSections(1, 2, 10, 5);
+
+        assertThat(resultList).hasSize(1);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_sections/1");
+        assertThat(request.getPath()).contains("suite_id=2");
+        assertThat(request.getPath()).contains("limit=10");
+        assertThat(request.getPath()).contains("offset=5");
+    }
+
+    @Test
+    void getRuns_shouldHandleAllParameters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        List<Map<String, Object>> runs = new ArrayList<>();
+        Map<String, Object> run1 = new HashMap<>();
+        run1.put("id", 1);
+        run1.put("name", "Run 1");
+        runs.add(run1);
+        response.put("runs", runs);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<TestRun> resultList = apiClient.getRuns(1, 10, 5);
+
+        assertThat(resultList).hasSize(1);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_runs/1");
+        assertThat(request.getPath()).contains("limit=10");
+        assertThat(request.getPath()).contains("offset=5");
+    }
+
+    @Test
+    void getResults_shouldHandleAllParameters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        List<Map<String, Object>> results = new ArrayList<>();
+        Map<String, Object> result1 = new HashMap<>();
+        result1.put("id", 1);
+        result1.put("status_id", 1);
+        results.add(result1);
+        response.put("results", results);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<TestResult> resultList = apiClient.getResults(100, 10, 5);
+
+        assertThat(resultList).hasSize(1);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_results/100");
+        assertThat(request.getPath()).contains("limit=10");
+        assertThat(request.getPath()).contains("offset=5");
+    }
 }
