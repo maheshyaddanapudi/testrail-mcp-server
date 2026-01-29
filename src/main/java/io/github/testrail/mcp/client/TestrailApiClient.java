@@ -60,16 +60,19 @@ public class TestrailApiClient {
         log.debug("Getting test cases for project: {}", projectId);
 
         StringBuilder uri = new StringBuilder("get_cases/" + projectId);
-        String separator = "&";
+        String separator = "?";
 
         if (suiteId != null) {
             uri.append(separator).append("suite_id=").append(suiteId);
+            separator = "&";
         }
         if (sectionId != null) {
             uri.append(separator).append("section_id=").append(sectionId);
+            separator = "&";
         }
         if (limit != null) {
             uri.append(separator).append("limit=").append(limit);
+            separator = "&";
         }
         if (offset != null) {
             uri.append(separator).append("offset=").append(offset);
@@ -195,10 +198,11 @@ public class TestrailApiClient {
         log.debug("Getting runs for project: {}", projectId);
 
         StringBuilder uri = new StringBuilder("get_runs/" + projectId);
-        String separator = "&";
+        String separator = "?";
 
         if (limit != null) {
             uri.append(separator).append("limit=").append(limit);
+            separator = "&";
         }
         if (offset != null) {
             uri.append(separator).append("offset=").append(offset);
@@ -267,10 +271,11 @@ public class TestrailApiClient {
         log.debug("Getting results for test: {}", testId);
 
         StringBuilder uri = new StringBuilder("get_results/" + testId);
-        String separator = "&";
+        String separator = "?";
 
         if (limit != null) {
             uri.append(separator).append("limit=").append(limit);
+            separator = "&";
         }
         if (offset != null) {
             uri.append(separator).append("offset=").append(offset);
@@ -292,10 +297,11 @@ public class TestrailApiClient {
         log.debug("Getting results for run: {}", runId);
 
         StringBuilder uri = new StringBuilder("get_results_for_run/" + runId);
-        String separator = "&";
+        String separator = "?";
 
         if (limit != null) {
             uri.append(separator).append("limit=").append(limit);
+            separator = "&";
         }
         if (offset != null) {
             uri.append(separator).append("offset=").append(offset);
@@ -373,13 +379,15 @@ public class TestrailApiClient {
         log.debug("Getting sections for project: {}", projectId);
 
         StringBuilder uri = new StringBuilder("get_sections/" + projectId);
-        String separator = "&";
+        String separator = "?";
 
         if (suiteId != null) {
             uri.append(separator).append("suite_id=").append(suiteId);
+            separator = "&";
         }
         if (limit != null) {
             uri.append(separator).append("limit=").append(limit);
+            separator = "&";
         }
         if (offset != null) {
             uri.append(separator).append("offset=").append(offset);
