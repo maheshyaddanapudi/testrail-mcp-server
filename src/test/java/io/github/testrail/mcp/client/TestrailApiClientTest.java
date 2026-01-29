@@ -1382,4 +1382,217 @@ class TestrailApiClientTest {
         RecordedRequest request = mockWebServer.takeRequest();
         assertThat(request.getPath()).isEqualTo("/delete_milestone/1");
     }
+
+    // ==================== Configurations Tests ====================
+
+    @Test
+    void testGetConfigs() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"Browsers\",\"project_id\":1,\"configs\":[{\"id\":2,\"name\":\"Chrome\"}]}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] configs = apiClient.getConfigs(1);
+
+        assertThat(configs).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_configs/1");
+    }
+
+    @Test
+    void testAddConfigGroup() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"Browsers\",\"project_id\":1}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.ConfigurationGroup configGroup = apiClient.addConfigGroup(1, Map.of("name", "Browsers"));
+
+        assertThat(configGroup.getId()).isEqualTo(1);
+        assertThat(configGroup.getName()).isEqualTo("Browsers");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_config_group/1");
+    }
+
+    @Test
+    void testAddConfig() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":2,\"name\":\"Chrome\",\"group_id\":1}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Configuration config = apiClient.addConfig(1, Map.of("name", "Chrome"));
+
+        assertThat(config.getId()).isEqualTo(2);
+        assertThat(config.getName()).isEqualTo("Chrome");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_config/1");
+    }
+
+    @Test
+    void testUpdateConfigGroup() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"Updated Browsers\",\"project_id\":1}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.ConfigurationGroup configGroup = apiClient.updateConfigGroup(1, Map.of("name", "Updated Browsers"));
+
+        assertThat(configGroup.getId()).isEqualTo(1);
+        assertThat(configGroup.getName()).isEqualTo("Updated Browsers");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_config_group/1");
+    }
+
+    @Test
+    void testUpdateConfig() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":2,\"name\":\"Firefox\",\"group_id\":1}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Configuration config = apiClient.updateConfig(2, Map.of("name", "Firefox"));
+
+        assertThat(config.getId()).isEqualTo(2);
+        assertThat(config.getName()).isEqualTo("Firefox");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_config/2");
+    }
+
+    @Test
+    void testDeleteConfigGroup() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteConfigGroup(1);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_config_group/1");
+    }
+
+    @Test
+    void testDeleteConfig() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteConfig(2);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_config/2");
+    }
+
+    // ==================== Case Fields Tests ====================
+
+    @Test
+    void testGetCaseFields() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"custom_field\",\"type_id\":1,\"label\":\"Custom Field\"}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] fields = apiClient.getCaseFields();
+
+        assertThat(fields).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_case_fields");
+    }
+
+    @Test
+    void testAddCaseField() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"custom_field\",\"type_id\":1,\"label\":\"Custom Field\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.CaseField field = apiClient.addCaseField(Map.of("name", "custom_field", "type_id", 1));
+
+        assertThat(field.getId()).isEqualTo(1);
+        assertThat(field.getName()).isEqualTo("custom_field");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_case_field");
+    }
+
+    // ==================== Case Types Tests ====================
+
+    @Test
+    void testGetCaseTypes() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"Functional\",\"is_default\":true},{\"id\":2,\"name\":\"Performance\",\"is_default\":false}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] types = apiClient.getCaseTypes();
+
+        assertThat(types).hasSize(2);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_case_types");
+    }
+
+    // ==================== Priorities Tests ====================
+
+    @Test
+    void testGetPriorities() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"Critical\",\"short_name\":\"Crit\",\"priority\":1},{\"id\":2,\"name\":\"High\",\"short_name\":\"High\",\"priority\":2}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] priorities = apiClient.getPriorities();
+
+        assertThat(priorities).hasSize(2);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_priorities");
+    }
+
+    // ==================== Statuses Tests ====================
+
+    @Test
+    void testGetStatuses() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"passed\",\"label\":\"Passed\",\"is_final\":true},{\"id\":2,\"name\":\"failed\",\"label\":\"Failed\",\"is_final\":true}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] statuses = apiClient.getStatuses();
+
+        assertThat(statuses).hasSize(2);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_statuses");
+    }
+
+    // ==================== Templates Tests ====================
+
+    @Test
+    void testGetTemplates() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"Test Case (Text)\",\"is_default\":true},{\"id\":2,\"name\":\"Test Case (Steps)\",\"is_default\":false}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] templates = apiClient.getTemplates(1);
+
+        assertThat(templates).hasSize(2);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_templates/1");
+    }
+
+    // ==================== Result Fields Tests ====================
+
+    @Test
+    void testGetResultFields() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"custom_result_field\",\"type_id\":1,\"label\":\"Custom Result Field\"}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] fields = apiClient.getResultFields();
+
+        assertThat(fields).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_result_fields");
+    }
 }

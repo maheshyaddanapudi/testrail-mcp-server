@@ -900,6 +900,178 @@ public class TestrailApiClient {
         return extractList(response, "tests", Test.class);
     }
 
+    // ==================== Configurations API ====================
+
+    /**
+     * Gets configuration groups for a project.
+     *
+     * @param projectId the project ID
+     * @return list of configuration groups
+     */
+    public Object[] getConfigs(Integer projectId) {
+        log.debug("Getting configuration groups for project: {}", projectId);
+        JsonNode response = get("get_configs/" + projectId, JsonNode.class);
+        return extractListDirect(response, ConfigurationGroup.class).toArray();
+    }
+
+    /**
+     * Adds a new configuration group to a project.
+     *
+     * @param projectId the project ID
+     * @param configGroup the configuration group data
+     * @return the created configuration group
+     */
+    public ConfigurationGroup addConfigGroup(Integer projectId, Map<String, Object> configGroup) {
+        log.info("Adding configuration group to project: {}", projectId);
+        return post("add_config_group/" + projectId, configGroup, ConfigurationGroup.class);
+    }
+
+    /**
+     * Adds a new configuration to a configuration group.
+     *
+     * @param configGroupId the configuration group ID
+     * @param config the configuration data
+     * @return the created configuration
+     */
+    public Configuration addConfig(Integer configGroupId, Map<String, Object> config) {
+        log.info("Adding configuration to group: {}", configGroupId);
+        return post("add_config/" + configGroupId, config, Configuration.class);
+    }
+
+    /**
+     * Updates a configuration group.
+     *
+     * @param configGroupId the configuration group ID
+     * @param configGroup the configuration group data
+     * @return the updated configuration group
+     */
+    public ConfigurationGroup updateConfigGroup(Integer configGroupId, Map<String, Object> configGroup) {
+        log.info("Updating configuration group: {}", configGroupId);
+        return post("update_config_group/" + configGroupId, configGroup, ConfigurationGroup.class);
+    }
+
+    /**
+     * Updates a configuration.
+     *
+     * @param configId the configuration ID
+     * @param config the configuration data
+     * @return the updated configuration
+     */
+    public Configuration updateConfig(Integer configId, Map<String, Object> config) {
+        log.info("Updating configuration: {}", configId);
+        return post("update_config/" + configId, config, Configuration.class);
+    }
+
+    /**
+     * Deletes a configuration group.
+     *
+     * @param configGroupId the configuration group ID
+     */
+    public void deleteConfigGroup(Integer configGroupId) {
+        log.info("Deleting configuration group: {}", configGroupId);
+        post("delete_config_group/" + configGroupId, null, Void.class);
+    }
+
+    /**
+     * Deletes a configuration.
+     *
+     * @param configId the configuration ID
+     */
+    public void deleteConfig(Integer configId) {
+        log.info("Deleting configuration: {}", configId);
+        post("delete_config/" + configId, null, Void.class);
+    }
+
+    // ==================== Case Fields API ====================
+
+    /**
+     * Gets all case fields.
+     *
+     * @return list of case fields
+     */
+    public Object[] getCaseFields() {
+        log.debug("Getting case fields");
+        JsonNode response = get("get_case_fields", JsonNode.class);
+        return extractListDirect(response, CaseField.class).toArray();
+    }
+
+    /**
+     * Adds a new case field.
+     *
+     * @param caseField the case field data
+     * @return the created case field
+     */
+    public CaseField addCaseField(Map<String, Object> caseField) {
+        log.info("Adding case field");
+        return post("add_case_field", caseField, CaseField.class);
+    }
+
+    // ==================== Case Types API ====================
+
+    /**
+     * Gets all case types.
+     *
+     * @return list of case types
+     */
+    public Object[] getCaseTypes() {
+        log.debug("Getting case types");
+        JsonNode response = get("get_case_types", JsonNode.class);
+        return extractListDirect(response, CaseType.class).toArray();
+    }
+
+    // ==================== Priorities API ====================
+
+    /**
+     * Gets all priorities.
+     *
+     * @return list of priorities
+     */
+    public Object[] getPriorities() {
+        log.debug("Getting priorities");
+        JsonNode response = get("get_priorities", JsonNode.class);
+        return extractListDirect(response, Priority.class).toArray();
+    }
+
+    // ==================== Statuses API ====================
+
+    /**
+     * Gets all statuses.
+     *
+     * @return list of statuses
+     */
+    public Object[] getStatuses() {
+        log.debug("Getting statuses");
+        JsonNode response = get("get_statuses", JsonNode.class);
+        return extractListDirect(response, Status.class).toArray();
+    }
+
+    // ==================== Templates API ====================
+
+    /**
+     * Gets templates for a project.
+     *
+     * @param projectId the project ID
+     * @return list of templates
+     */
+    public Object[] getTemplates(Integer projectId) {
+        log.debug("Getting templates for project: {}", projectId);
+        JsonNode response = get("get_templates/" + projectId, JsonNode.class);
+        return extractListDirect(response, Template.class).toArray();
+    }
+
+    // ==================== Result Fields API ====================
+
+    /**
+     * Gets all result fields.
+     *
+     * @return list of result fields
+     */
+    public Object[] getResultFields() {
+        log.debug("Getting result fields");
+        JsonNode response = get("get_result_fields", JsonNode.class);
+        return extractListDirect(response, ResultField.class).toArray();
+    }
+
     // ==================== Helper Methods ====================
 
     private <T> T get(String uri, Class<T> responseType) {
