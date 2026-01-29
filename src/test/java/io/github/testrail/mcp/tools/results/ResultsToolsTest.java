@@ -41,14 +41,14 @@ class ResultsToolsTest {
         result2.setId(2);
         result2.setStatusId(5);
 
-        when(apiClient.getResults(100, 50, 0)).thenReturn(List.of(result1, result2));
+        when(apiClient.getResults(100, null, null, 50, 0)).thenReturn(List.of(result1, result2));
 
-        List<TestResult> results = resultsTools.getResults(100, 50, 0);
+        List<TestResult> results = resultsTools.getResults(100, null, null, 50, 0);
 
         assertThat(results).hasSize(2);
         assertThat(results.get(0).getStatusId()).isEqualTo(1);
         assertThat(results.get(1).getStatusId()).isEqualTo(5);
-        verify(apiClient).getResults(100, 50, 0);
+        verify(apiClient).getResults(100, null, null, 50, 0);
     }
 
     @Test
@@ -56,12 +56,12 @@ class ResultsToolsTest {
         TestResult result1 = new TestResult();
         result1.setId(1);
 
-        when(apiClient.getResultsForRun(100, null, null)).thenReturn(List.of(result1));
+        when(apiClient.getResultsForRun(100, null, null, null, null, null, null, null)).thenReturn(List.of(result1));
 
-        List<TestResult> results = resultsTools.getResultsForRun(100, null, null);
+        List<TestResult> results = resultsTools.getResultsForRun(100, null, null, null, null, null, null, null);
 
         assertThat(results).hasSize(1);
-        verify(apiClient).getResultsForRun(100, null, null);
+        verify(apiClient).getResultsForRun(100, null, null, null, null, null, null, null);
     }
 
     @Test

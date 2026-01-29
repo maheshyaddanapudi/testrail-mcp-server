@@ -52,29 +52,44 @@ public class RunsTools {
     }
 
     @Tool(description = """
-            Retrieves all test runs for a project with pagination support.
+            Retrieves all test runs for a project with optional filters and pagination support.
 
             **When to use:** Use this tool when you need to list all test runs in a project,
             find a specific run, review testing history, or identify active/completed runs.
+            Filter by completion status, creation time, creator, milestone, or test suite.
 
             **Might lead to:** get_run (for detailed info), add_run (to create new),
             get_results_for_run (to see results).
 
             **Example prompts:**
             - "List all test runs in project 1"
-            - "Show me the runs for project 5"
-            - "What test runs are active in project 3?"
+            - "Show me active runs for project 5"
+            - "Get completed test runs in project 3"
+            - "Find runs created after timestamp 1640000000"
+            - "Show runs for milestone 5 in project 2"
             """)
     public List<TestRun> getRuns(
             @ToolParam(description = "The ID of the project to retrieve test runs from.")
             Integer projectId,
-            @ToolParam(description = "Maximum number of results to return (1-250, default: 250).", required = false)
+            @ToolParam(description = "Filter by completion status: true for completed runs, false for active runs, null for all", required = false)
+            Boolean isCompleted,
+            @ToolParam(description = "Only return runs created after this UNIX timestamp", required = false)
+            Long createdAfter,
+            @ToolParam(description = "Only return runs created before this UNIX timestamp", required = false)
+            Long createdBefore,
+            @ToolParam(description = "Comma-separated list of creator user IDs to filter by", required = false)
+            String createdBy,
+            @ToolParam(description = "Comma-separated list of milestone IDs to filter by", required = false)
+            String milestoneId,
+            @ToolParam(description = "Comma-separated list of test suite IDs to filter by", required = false)
+            String suiteId,
+            @ToolParam(description = "Maximum number of results to return (1-250, default: 250)", required = false)
             Integer limit,
-            @ToolParam(description = "Number of results to skip for pagination.", required = false)
+            @ToolParam(description = "Number of results to skip for pagination", required = false)
             Integer offset
     ) {
-        log.info("Tool: get_runs called with projectId={}", projectId);
-        return apiClient.getRuns(projectId, limit, offset);
+        log.info("Tool: get_runs called with projectId={}, filters applied", projectId);
+        return apiClient.getRuns(projectId, isCompleted, createdAfter, createdBefore, createdBy, milestoneId, suiteId, limit, offset);
     }
 
     @Tool(description = """

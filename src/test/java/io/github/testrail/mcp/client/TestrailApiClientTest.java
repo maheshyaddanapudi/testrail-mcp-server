@@ -232,7 +232,7 @@ class TestrailApiClientTest {
                 .setBody(objectMapper.writeValueAsString(response))
                 .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-        List<Project> result = apiClient.getProjects();
+        List<Project> result = apiClient.getProjects(null, null, null);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Project 1");
@@ -304,7 +304,7 @@ class TestrailApiClientTest {
                 .setBody(objectMapper.writeValueAsString(response))
                 .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-        List<TestRun> result = apiClient.getRuns(1, null, null);
+        List<TestRun> result = apiClient.getRuns(1, null, null, null, null, null, null, null, null);
 
         assertThat(result).hasSize(1);
     }
@@ -365,7 +365,7 @@ class TestrailApiClientTest {
                 .setBody(objectMapper.writeValueAsString(response))
                 .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-        List<TestResult> resultList = apiClient.getResults(100, null, null);
+        List<TestResult> resultList = apiClient.getResults(100, null, null, null, null);
 
         assertThat(resultList).hasSize(1);
         assertThat(resultList.get(0).getStatusId()).isEqualTo(1);
@@ -618,7 +618,7 @@ class TestrailApiClientTest {
                 .setBody(objectMapper.writeValueAsString(response))
                 .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-        List<TestResult> resultList = apiClient.getResultsForRun(100, 10, 0);
+        List<TestResult> resultList = apiClient.getResultsForRun(100, null, null, null, null, null, 10, 0);
 
         assertThat(resultList).hasSize(1);
         assertThat(resultList.get(0).getTestId()).isEqualTo(100);
@@ -636,7 +636,7 @@ class TestrailApiClientTest {
                 .setBody(objectMapper.writeValueAsString(response))
                 .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-        List<TestResult> resultList = apiClient.getResultsForRun(100, null, null);
+        List<TestResult> resultList = apiClient.getResultsForRun(100, null, null, null, null, null, null, null);
 
         assertThat(resultList).isEmpty();
 
@@ -741,7 +741,7 @@ class TestrailApiClientTest {
                 .setBody(objectMapper.writeValueAsString(response))
                 .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-        List<TestRun> resultList = apiClient.getRuns(1, 10, 5);
+        List<TestRun> resultList = apiClient.getRuns(1, null, null, null, null, null, null, 10, 5);
 
         assertThat(resultList).hasSize(1);
 
@@ -765,7 +765,7 @@ class TestrailApiClientTest {
                 .setBody(objectMapper.writeValueAsString(response))
                 .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-        List<TestResult> resultList = apiClient.getResults(100, 10, 5);
+        List<TestResult> resultList = apiClient.getResults(100, null, null, 10, 5);
 
         assertThat(resultList).hasSize(1);
 
@@ -773,5 +773,104 @@ class TestrailApiClientTest {
         assertThat(request.getPath()).contains("/get_results/100");
         assertThat(request.getPath()).contains("limit=10");
         assertThat(request.getPath()).contains("offset=5");
+    }
+
+    // ==================== Filter Parameters Tests ====================
+
+    @Test
+    void getProjects_shouldApplyFilters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        response.put("projects", new ArrayList<>());
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.getProjects(true, 50, 10);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_projects");
+        assertThat(request.getPath()).contains("is_completed=1");
+        assertThat(request.getPath()).contains("limit=50");
+        assertThat(request.getPath()).contains("offset=10");
+    }
+
+    @Test
+    void getProjects_shouldHandleIsCompletedFalse() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        response.put("projects", new ArrayList<>());
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.getProjects(false, null, null);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("is_completed=0");
+    }
+
+    @Test
+    void getRuns_shouldApplyAllFilters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        response.put("runs", new ArrayList<>());
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.getRuns(1, true, 1640000000L, 1650000000L, "1,2,3", "5,6", "10,11", 100, 20);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_runs/1");
+        assertThat(request.getPath()).contains("is_completed=1");
+        assertThat(request.getPath()).contains("created_after=1640000000");
+        assertThat(request.getPath()).contains("created_before=1650000000");
+        assertThat(request.getPath()).contains("created_by=1,2,3");
+        assertThat(request.getPath()).contains("milestone_id=5,6");
+        assertThat(request.getPath()).contains("suite_id=10,11");
+        assertThat(request.getPath()).contains("limit=100");
+        assertThat(request.getPath()).contains("offset=20");
+    }
+
+    @Test
+    void getResults_shouldApplyDefectsAndStatusFilters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        response.put("results", new ArrayList<>());
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.getResults(100, "TR-123", "1,5", 50, 10);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_results/100");
+        assertThat(request.getPath()).contains("defects_filter=TR-123");
+        assertThat(request.getPath()).contains("status_id=1,5");
+        assertThat(request.getPath()).contains("limit=50");
+        assertThat(request.getPath()).contains("offset=10");
+    }
+
+    @Test
+    void getResultsForRun_shouldApplyAllFilters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        response.put("results", new ArrayList<>());
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.getResultsForRun(100, 1640000000L, 1650000000L, "1,2", "TR-456", "1,5", 100, 50);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_results_for_run/100");
+        assertThat(request.getPath()).contains("created_after=1640000000");
+        assertThat(request.getPath()).contains("created_before=1650000000");
+        assertThat(request.getPath()).contains("created_by=1,2");
+        assertThat(request.getPath()).contains("defects_filter=TR-456");
+        assertThat(request.getPath()).contains("status_id=1,5");
+        assertThat(request.getPath()).contains("limit=100");
+        assertThat(request.getPath()).contains("offset=50");
     }
 }

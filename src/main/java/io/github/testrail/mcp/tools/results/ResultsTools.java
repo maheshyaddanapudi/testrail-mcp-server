@@ -28,55 +28,74 @@ public class ResultsTools {
     }
 
     @Tool(description = """
-            Retrieves test results for a specific test in a test run.
+            Retrieves test results for a specific test in a test run with optional filters.
             Returns the history of results for the test with status, comments, and defects.
 
             **When to use:** Use this tool when you need to see the result history for a specific test,
             check if a test has been executed, review previous execution comments, or track test status changes.
+            Filter by defect ID or status to narrow down results.
 
             **Might lead to:** add_result (to add a new result), get_results_for_run (for all run results).
 
             **Example prompts:**
             - "Show me the results for test T123"
-            - "Get the result history for test 456"
-            - "What was the last result for test T789?"
+            - "Get failed results for test 456"
+            - "Show results for test 789 with defect TR-123"
+            - "Get the last 10 results for test T456"
             """)
     public List<TestResult> getResults(
-            @ToolParam(description = "The ID of the test (note: this is the test ID, not the case ID).")
+            @ToolParam(description = "The ID of the test (note: this is the test ID, not the case ID)")
             Integer testId,
-            @ToolParam(description = "Maximum number of results to return.", required = false)
+            @ToolParam(description = "Filter by a single Defect ID (e.g. TR-1, 4291, etc.)", required = false)
+            String defectsFilter,
+            @ToolParam(description = "Comma-separated list of status IDs to filter by (e.g. '1,5' for passed and failed)", required = false)
+            String statusId,
+            @ToolParam(description = "Maximum number of results to return (1-250)", required = false)
             Integer limit,
-            @ToolParam(description = "Number of results to skip for pagination.", required = false)
+            @ToolParam(description = "Number of results to skip for pagination", required = false)
             Integer offset
     ) {
-        log.info("Tool: get_results called with testId={}", testId);
-        return apiClient.getResults(testId, limit, offset);
+        log.info("Tool: get_results called with testId={}, filters applied", testId);
+        return apiClient.getResults(testId, defectsFilter, statusId, limit, offset);
     }
 
     @Tool(description = """
-            Retrieves all test results for a test run.
+            Retrieves all test results for a test run with optional filters.
             Returns results for all tests in the run with their status, comments, and defects.
 
             **When to use:** Use this tool when you need to see all results for a test run,
             generate a summary report, analyze pass/fail patterns, or export run results.
+            Filter by creation time, creator, defect ID, or status to narrow down results.
 
             **Might lead to:** get_run (for run details), add_result (to add missing results).
 
             **Example prompts:**
             - "Show me all results for run R123"
-            - "Get the results summary for run 456"
-            - "What tests failed in run R789?"
+            - "Get failed results for run 456"
+            - "Show results created after timestamp 1640000000 in run 789"
+            - "Get results with defect TR-123 in run R456"
+            - "Show results with status 1 or 5 in run 789"
             """)
     public List<TestResult> getResultsForRun(
-            @ToolParam(description = "The ID of the test run.")
+            @ToolParam(description = "The ID of the test run")
             Integer runId,
-            @ToolParam(description = "Maximum number of results to return.", required = false)
+            @ToolParam(description = "Only return results created after this UNIX timestamp", required = false)
+            Long createdAfter,
+            @ToolParam(description = "Only return results created before this UNIX timestamp", required = false)
+            Long createdBefore,
+            @ToolParam(description = "Comma-separated list of creator user IDs to filter by", required = false)
+            String createdBy,
+            @ToolParam(description = "Filter by a single Defect ID (e.g. TR-1, 4291, etc.)", required = false)
+            String defectsFilter,
+            @ToolParam(description = "Comma-separated list of status IDs to filter by (e.g. '1,5' for passed and failed)", required = false)
+            String statusId,
+            @ToolParam(description = "Maximum number of results to return (1-250)", required = false)
             Integer limit,
-            @ToolParam(description = "Number of results to skip for pagination.", required = false)
+            @ToolParam(description = "Number of results to skip for pagination", required = false)
             Integer offset
     ) {
-        log.info("Tool: get_results_for_run called with runId={}", runId);
-        return apiClient.getResultsForRun(runId, limit, offset);
+        log.info("Tool: get_results_for_run called with runId={}, filters applied", runId);
+        return apiClient.getResultsForRun(runId, createdAfter, createdBefore, createdBy, defectsFilter, statusId, limit, offset);
     }
 
     @Tool(description = """
