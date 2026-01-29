@@ -168,6 +168,7 @@ source ~/.bashrc  # or source ~/.zshrc
       "command": "java",
       "args": ["-jar", "/path/to/testrail-mcp-server.jar"],
       "env": {
+        "MCP_MODE": "true",
         "TESTRAIL_URL": "https://your-company.testrail.io",
         "TESTRAIL_USERNAME": "your.email@company.com",
         "TESTRAIL_API_KEY": "your-api-key-here"
@@ -236,6 +237,7 @@ flowchart TB
         "/absolute/path/to/testrail-mcp-server.jar"
       ],
       "env": {
+        "MCP_MODE": "true",
         "TESTRAIL_URL": "https://your-company.testrail.io",
         "TESTRAIL_USERNAME": "your.email@company.com",
         "TESTRAIL_API_KEY": "your-api-key-here"
@@ -244,6 +246,8 @@ flowchart TB
   }
 }
 ```
+
+> **Important:** The `MCP_MODE=true` environment variable enables stdin monitoring, which prevents orphaned Java processes when Cursor restarts. Always include this in your Cursor configuration.
 
 ### Step-by-Step Setup
 
@@ -482,6 +486,7 @@ flowchart TB
       "command": "java",
       "args": ["-jar", "/path/to/testrail-mcp-server.jar"],
       "env": {
+        "MCP_MODE": "true",
         "TESTRAIL_URL": "https://dev.testrail.io",
         "TESTRAIL_USERNAME": "dev@company.com",
         "TESTRAIL_API_KEY": "dev-api-key"
@@ -491,6 +496,7 @@ flowchart TB
       "command": "java",
       "args": ["-jar", "/path/to/testrail-mcp-server.jar"],
       "env": {
+        "MCP_MODE": "true",
         "TESTRAIL_URL": "https://prod.testrail.io",
         "TESTRAIL_USERNAME": "prod@company.com",
         "TESTRAIL_API_KEY": "prod-api-key"
@@ -528,6 +534,7 @@ flowchart LR
         "/path/to/testrail-mcp-server.jar"
       ],
       "env": {
+        "MCP_MODE": "true",
         "TESTRAIL_URL": "https://your-company.testrail.io",
         "TESTRAIL_USERNAME": "user@company.com",
         "TESTRAIL_API_KEY": "your-api-key"
@@ -570,6 +577,7 @@ flowchart LR
         "/path/to/testrail-mcp-server.jar"
       ],
       "env": {
+        "MCP_MODE": "true",
         "TESTRAIL_URL": "https://your-company.testrail.io",
         "TESTRAIL_USERNAME": "user@company.com",
         "TESTRAIL_API_KEY": "your-api-key"

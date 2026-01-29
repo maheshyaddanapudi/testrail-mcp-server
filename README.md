@@ -257,6 +257,7 @@ export TESTRAIL_API_KEY="your-api-key-here"
 
 # Optional
 export TESTRAIL_LOG_LEVEL="DEBUG"  # DEBUG, INFO, WARN, ERROR
+export MCP_MODE="true"  # Enable stdin monitoring for MCP clients (Cursor)
 ```
 
 ### Application Configuration
@@ -311,6 +312,7 @@ Create or edit your Cursor MCP configuration file:
         "/absolute/path/to/testrail-mcp-server.jar"
       ],
       "env": {
+        "MCP_MODE": "true",
         "TESTRAIL_URL": "https://yourcompany.testrail.io",
         "TESTRAIL_USERNAME": "your.email@company.com",
         "TESTRAIL_API_KEY": "your-api-key"
@@ -327,6 +329,40 @@ After saving the configuration, restart Cursor to load the MCP server.
 ### Step 3: Verify Connection
 
 In Cursor, open the command palette (Cmd/Ctrl + Shift + P) and search for "MCP" to verify the server is connected.
+
+### Understanding MCP_MODE
+
+The `MCP_MODE` environment variable controls process lifecycle management:
+
+**When `MCP_MODE=true` (Cursor/MCP clients):**
+- ✅ Server monitors stdin for parent process lifecycle
+- ✅ Automatically shuts down when Cursor restarts
+- ✅ Prevents orphaned Java processes
+- ✅ Clean resource cleanup
+
+**When `MCP_MODE` is unset or `false` (Standalone):**
+- ✅ Server runs independently
+- ✅ Compatible with `nohup`, background jobs (`&`), systemd
+- ✅ No automatic shutdown
+- ✅ Suitable for long-running services
+
+**Usage Examples:**
+
+```bash
+# MCP mode (for Cursor) - exits when parent dies
+MCP_MODE=true java -jar testrail-mcp-server.jar
+
+# Standalone mode - runs forever
+java -jar testrail-mcp-server.jar
+
+# Background job - runs forever
+java -jar testrail-mcp-server.jar &
+
+# With nohup - runs forever even after logout
+nohup java -jar testrail-mcp-server.jar &
+```
+
+> **Important:** Always set `MCP_MODE=true` in Cursor's `mcp.json` configuration to prevent orphaned processes when Cursor restarts.
 
 ### Configuration Flow
 
