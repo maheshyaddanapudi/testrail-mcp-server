@@ -14,6 +14,10 @@ import io.github.testrail.mcp.model.SharedStep;
 import io.github.testrail.mcp.model.SharedStepHistory;
 import io.github.testrail.mcp.model.Report;
 import io.github.testrail.mcp.model.Role;
+import io.github.testrail.mcp.model.Dataset;
+import io.github.testrail.mcp.model.Group;
+import io.github.testrail.mcp.model.Label;
+import io.github.testrail.mcp.model.Variable;
 import com.fasterxml.jackson.databind.JsonNode;
 // Note: Test class is NOT imported to avoid conflict with JUnit @Test annotation
 import okhttp3.mockwebserver.MockResponse;
@@ -1888,5 +1892,288 @@ class TestrailApiClientTest {
         assertThat(roles.get(1).getIsDefault()).isTrue();
         RecordedRequest request = mockWebServer.takeRequest();
         assertThat(request.getPath()).isEqualTo("/get_roles");
+    }
+
+    // ==================== Phase 5 Tests ====================
+
+    @Test
+    void testGetBdd() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("@APP-1\nFeature: Login\nScenario: Valid login\nGiven user is on login page\nWhen user enters credentials\nThen user is logged in")
+                .addHeader(HttpHeaders.CONTENT_TYPE, "text/plain"));
+
+        String bdd = apiClient.getBdd(123);
+
+        assertThat(bdd).contains("@APP-1");
+        assertThat(bdd).contains("Feature: Login");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_bdd/123");
+    }
+
+    @Test
+    void testAddBdd() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":456,\"title\":\"Login Test\",\"section_id\":789}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        TestCase testCase = apiClient.addBdd(789, "Feature: Login");
+
+        assertThat(testCase.getId()).isEqualTo(456);
+        assertThat(testCase.getTitle()).isEqualTo("Login Test");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_bdd/789");
+    }
+
+    @Test
+    void testGetDataset() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":183,\"name\":\"Default\",\"variables\":[{\"id\":1,\"name\":\"username\",\"value\":\"admin\"}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Dataset dataset = apiClient.getDataset(183);
+
+        assertThat(dataset.getId()).isEqualTo(183);
+        assertThat(dataset.getName()).isEqualTo("Default");
+        assertThat(dataset.getVariables()).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_dataset/183");
+    }
+
+    @Test
+    void testGetDatasets() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"datasets\":[{\"id\":1,\"name\":\"Dataset1\"},{\"id\":2,\"name\":\"Dataset2\"}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Dataset> datasets = apiClient.getDatasets(1);
+
+        assertThat(datasets).hasSize(2);
+        assertThat(datasets.get(0).getName()).isEqualTo("Dataset1");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_datasets/1");
+    }
+
+    @Test
+    void testAddDataset() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":3,\"name\":\"New Dataset\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> datasetData = Map.of("name", "New Dataset");
+        Dataset dataset = apiClient.addDataset(1, datasetData);
+
+        assertThat(dataset.getId()).isEqualTo(3);
+        assertThat(dataset.getName()).isEqualTo("New Dataset");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_dataset/1");
+    }
+
+    @Test
+    void testUpdateDataset() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":3,\"name\":\"Updated Dataset\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> datasetData = Map.of("name", "Updated Dataset");
+        Dataset dataset = apiClient.updateDataset(3, datasetData);
+
+        assertThat(dataset.getName()).isEqualTo("Updated Dataset");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_dataset/3");
+    }
+
+    @Test
+    void testDeleteDataset() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteDataset(3);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_dataset/3");
+    }
+
+    @Test
+    void testGetGroup() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"Developers\",\"user_ids\":[1,2,3]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Group group = apiClient.getGroup(1);
+
+        assertThat(group.getId()).isEqualTo(1);
+        assertThat(group.getName()).isEqualTo("Developers");
+        assertThat(group.getUserIds()).hasSize(3);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_group/1");
+    }
+
+    @Test
+    void testGetGroups() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"groups\":[{\"id\":1,\"name\":\"Group1\"},{\"id\":2,\"name\":\"Group2\"}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Group> groups = apiClient.getGroups();
+
+        assertThat(groups).hasSize(2);
+        assertThat(groups.get(0).getName()).isEqualTo("Group1");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_groups");
+    }
+
+    @Test
+    void testAddGroup() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":3,\"name\":\"New Group\",\"user_ids\":[1,2]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> groupData = Map.of("name", "New Group", "user_ids", List.of(1, 2));
+        Group group = apiClient.addGroup(groupData);
+
+        assertThat(group.getId()).isEqualTo(3);
+        assertThat(group.getName()).isEqualTo("New Group");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_group");
+    }
+
+    @Test
+    void testUpdateGroup() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":3,\"name\":\"Updated Group\",\"user_ids\":[1,2,3]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> groupData = Map.of("name", "Updated Group", "user_ids", List.of(1, 2, 3));
+        Group group = apiClient.updateGroup(3, groupData);
+
+        assertThat(group.getName()).isEqualTo("Updated Group");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_group/3");
+    }
+
+    @Test
+    void testDeleteGroup() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteGroup(3);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_group/3");
+    }
+
+    @Test
+    void testGetLabel() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"Release 2.0\",\"title\":\"Release 2.0\",\"created_by\":1,\"created_on\":1234567890}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Label label = apiClient.getLabel(1);
+
+        assertThat(label.getId()).isEqualTo(1);
+        assertThat(label.getName()).isEqualTo("Release 2.0");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_label/1");
+    }
+
+    @Test
+    void testGetLabels() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"labels\":[{\"id\":1,\"title\":\"Label1\"},{\"id\":2,\"title\":\"Label2\"}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Label> labels = apiClient.getLabels(1, 10, 0);
+
+        assertThat(labels).hasSize(2);
+        assertThat(labels.get(0).getTitle()).isEqualTo("Label1");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_labels/1");
+    }
+
+    @Test
+    void testUpdateLabel() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"title\":\"Updated Label\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> labelData = Map.of("title", "Updated Label");
+        Label label = apiClient.updateLabel(1, labelData);
+
+        assertThat(label.getTitle()).isEqualTo("Updated Label");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_label/1");
+    }
+
+    @Test
+    void testGetVariables() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"variables\":[{\"id\":1,\"name\":\"username\"},{\"id\":2,\"name\":\"password\"}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Variable> variables = apiClient.getVariables(1);
+
+        assertThat(variables).hasSize(2);
+        assertThat(variables.get(0).getName()).isEqualTo("username");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_variables/1");
+    }
+
+    @Test
+    void testAddVariable() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":3,\"name\":\"email\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> variableData = Map.of("name", "email");
+        Variable variable = apiClient.addVariable(1, variableData);
+
+        assertThat(variable.getId()).isEqualTo(3);
+        assertThat(variable.getName()).isEqualTo("email");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_variable/1");
+    }
+
+    @Test
+    void testUpdateVariable() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":3,\"name\":\"user_email\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> variableData = Map.of("name", "user_email");
+        Variable variable = apiClient.updateVariable(3, variableData);
+
+        assertThat(variable.getName()).isEqualTo("user_email");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_variable/3");
+    }
+
+    @Test
+    void testDeleteVariable() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteVariable(3);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_variable/3");
     }
 }

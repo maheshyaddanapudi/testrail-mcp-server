@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1321,6 +1322,119 @@ public class TestrailApiClient {
         log.debug("Getting roles");
         JsonNode response = get("get_roles", JsonNode.class);
         return extractList(response, "roles", Role.class);
+    }
+
+    // ==================== Phase 5: BDDs, Datasets, Groups, Labels, Variables ====================
+
+    // BDDs API
+    public String getBdd(int caseId) {
+        log.debug("Getting BDD for case {}", caseId);
+        return get("get_bdd/" + caseId, String.class);
+    }
+
+    public TestCase addBdd(int sectionId, String featureFileContent) {
+        log.debug("Adding BDD to section {}", sectionId);
+        return post("add_bdd/" + sectionId, featureFileContent, TestCase.class);
+    }
+
+    // Datasets API
+    public Dataset getDataset(int datasetId) {
+        log.debug("Getting dataset {}", datasetId);
+        return get("get_dataset/" + datasetId, Dataset.class);
+    }
+
+    public List<Dataset> getDatasets(int projectId) {
+        log.debug("Getting datasets for project {}", projectId);
+        JsonNode response = get("get_datasets/" + projectId, JsonNode.class);
+        return extractList(response, "datasets", Dataset.class);
+    }
+
+    public Dataset addDataset(int projectId, Map<String, Object> dataset) {
+        log.debug("Adding dataset to project {}", projectId);
+        return post("add_dataset/" + projectId, dataset, Dataset.class);
+    }
+
+    public Dataset updateDataset(int datasetId, Map<String, Object> dataset) {
+        log.debug("Updating dataset {}", datasetId);
+        return post("update_dataset/" + datasetId, dataset, Dataset.class);
+    }
+
+    public void deleteDataset(int datasetId) {
+        log.debug("Deleting dataset {}", datasetId);
+        post("delete_dataset/" + datasetId, null, Void.class);
+    }
+
+    // Groups API
+    public Group getGroup(int groupId) {
+        log.debug("Getting group {}", groupId);
+        return get("get_group/" + groupId, Group.class);
+    }
+
+    public List<Group> getGroups() {
+        log.debug("Getting groups");
+        JsonNode response = get("get_groups", JsonNode.class);
+        return extractList(response, "groups", Group.class);
+    }
+
+    public Group addGroup(Map<String, Object> group) {
+        log.debug("Adding group");
+        return post("add_group", group, Group.class);
+    }
+
+    public Group updateGroup(int groupId, Map<String, Object> group) {
+        log.debug("Updating group {}", groupId);
+        return post("update_group/" + groupId, group, Group.class);
+    }
+
+    public void deleteGroup(int groupId) {
+        log.debug("Deleting group {}", groupId);
+        post("delete_group/" + groupId, null, Void.class);
+    }
+
+    // Labels API
+    public Label getLabel(int labelId) {
+        log.debug("Getting label {}", labelId);
+        return get("get_label/" + labelId, Label.class);
+    }
+
+    public List<Label> getLabels(int projectId, Integer limit, Integer offset) {
+        log.debug("Getting labels for project {}", projectId);
+        StringBuilder url = new StringBuilder("get_labels/" + projectId);
+        List<String> params = new ArrayList<>();
+        if (limit != null) params.add("limit=" + limit);
+        if (offset != null) params.add("offset=" + offset);
+        if (!params.isEmpty()) {
+            url.append("?").append(String.join("&", params));
+        }
+        JsonNode response = get(url.toString(), JsonNode.class);
+        return extractList(response, "labels", Label.class);
+    }
+
+    public Label updateLabel(int labelId, Map<String, Object> label) {
+        log.debug("Updating label {}", labelId);
+        return post("update_label/" + labelId, label, Label.class);
+    }
+
+    // Variables API
+    public List<Variable> getVariables(int projectId) {
+        log.debug("Getting variables for project {}", projectId);
+        JsonNode response = get("get_variables/" + projectId, JsonNode.class);
+        return extractList(response, "variables", Variable.class);
+    }
+
+    public Variable addVariable(int projectId, Map<String, Object> variable) {
+        log.debug("Adding variable to project {}", projectId);
+        return post("add_variable/" + projectId, variable, Variable.class);
+    }
+
+    public Variable updateVariable(int variableId, Map<String, Object> variable) {
+        log.debug("Updating variable {}", variableId);
+        return post("update_variable/" + variableId, variable, Variable.class);
+    }
+
+    public void deleteVariable(int variableId) {
+        log.debug("Deleting variable {}", variableId);
+        post("delete_variable/" + variableId, null, Void.class);
     }
 
     // ==================== Helper Methods ====================
