@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -47,6 +48,17 @@ class TestrailApiClientTest {
 
         apiClient = new TestrailApiClient(webClient);
         objectMapper = new ObjectMapper();
+    }
+
+    @AfterEach
+    void tearDown() throws InterruptedException {
+        // Drain any remaining requests to prevent test pollution
+        // Try to drain up to 10 pending requests with a short timeout
+        for (int i = 0; i < 10; i++) {
+            if (mockWebServer.takeRequest(10, TimeUnit.MILLISECONDS) == null) {
+                break; // No more pending requests
+            }
+        }
     }
 
     // ==================== Cases Tests ====================
