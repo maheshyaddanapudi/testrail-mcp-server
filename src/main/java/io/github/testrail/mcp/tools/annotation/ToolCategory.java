@@ -9,7 +9,12 @@ public enum ToolCategory {
     PROJECTS("Projects", "Operations related to project management"),
     RUNS("Test Runs", "Operations related to test run management"),
     RESULTS("Test Results", "Operations related to test results"),
-    SECTIONS("Sections", "Operations related to test case sections");
+    SECTIONS("Sections", "Operations related to test case sections"),
+    PLANS("Test Plans", "Operations related to test plan management"),
+    TESTS("Tests", "Operations related to individual test instances"),
+    USERS("Users", "Operations related to user management"),
+    SUITES("Test Suites", "Operations related to test suite management"),
+    MILESTONES("Milestones", "Operations related to milestone management");
 
     private final String displayName;
     private final String description;

@@ -87,13 +87,18 @@ class ToolCategoryTest {
     @Test
     void values_shouldReturnAllCategories() {
         ToolCategory[] categories = ToolCategory.values();
-        assertThat(categories).hasSize(5);
+        assertThat(categories).hasSize(10);
         assertThat(categories).contains(
             ToolCategory.CASES,
             ToolCategory.PROJECTS,
             ToolCategory.RUNS,
             ToolCategory.RESULTS,
-            ToolCategory.SECTIONS
+            ToolCategory.SECTIONS,
+            ToolCategory.TESTS,
+            ToolCategory.PLANS,
+            ToolCategory.MILESTONES,
+            ToolCategory.SUITES,
+            ToolCategory.USERS
         );
     }
 }

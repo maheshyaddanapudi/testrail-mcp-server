@@ -648,6 +648,201 @@ public class TestrailApiClient {
         post("delete_plan/" + planId, null, Void.class);
     }
 
+    // ==================== Users API ====================
+
+    /**
+     * Gets a user by ID.
+     *
+     * @param userId the user ID
+     * @return the user
+     */
+    public User getUser(Integer userId) {
+        log.debug("Getting user: {}", userId);
+        return get("get_user/" + userId, User.class);
+    }
+
+    /**
+     * Gets the current authenticated user.
+     *
+     * @return the current user
+     */
+    public User getCurrentUser() {
+        log.debug("Getting current user");
+        return get("get_current_user", User.class);
+    }
+
+    /**
+     * Gets a user by email address.
+     *
+     * @param email the email address
+     * @return the user
+     */
+    public User getUserByEmail(String email) {
+        log.debug("Getting user by email: {}", email);
+        return get("get_user_by_email&email=" + email, User.class);
+    }
+
+    /**
+     * Gets all users or users for a specific project.
+     *
+     * @param projectId optional project ID (required for non-admins)
+     * @return list of users
+     */
+    public Object[] getUsers(Integer projectId) {
+        log.debug("Getting users for project: {}", projectId);
+        String uri = projectId != null ? "get_users/" + projectId : "get_users";
+        // get_users returns a direct array, not wrapped in a field
+        JsonNode response = get(uri, JsonNode.class);
+        return extractListDirect(response, User.class).toArray();
+    }
+
+    // ==================== Suites API ====================
+
+    /**
+     * Gets a suite by ID.
+     *
+     * @param suiteId the suite ID
+     * @return the suite
+     */
+    public Suite getSuite(Integer suiteId) {
+        log.debug("Getting suite: {}", suiteId);
+        return get("get_suite/" + suiteId, Suite.class);
+    }
+
+    /**
+     * Gets suites for a project.
+     *
+     * @param projectId the project ID
+     * @return list of suites
+     */
+    public Object[] getSuites(Integer projectId) {
+        log.debug("Getting suites for project: {}", projectId);
+        JsonNode response = get("get_suites/" + projectId, JsonNode.class);
+        return extractList(response, "suites", Suite.class).toArray();
+    }
+
+    /**
+     * Adds a new suite to a project.
+     *
+     * @param projectId the project ID
+     * @param suite the suite data
+     * @return the created suite
+     */
+    public Suite addSuite(Integer projectId, Map<String, Object> suite) {
+        log.info("Adding suite to project: {}", projectId);
+        return post("add_suite/" + projectId, suite, Suite.class);
+    }
+
+    /**
+     * Updates a suite.
+     *
+     * @param suiteId the suite ID
+     * @param suite the suite data
+     * @return the updated suite
+     */
+    public Suite updateSuite(Integer suiteId, Map<String, Object> suite) {
+        log.info("Updating suite: {}", suiteId);
+        return post("update_suite/" + suiteId, suite, Suite.class);
+    }
+
+    /**
+     * Deletes a suite.
+     *
+     * @param suiteId the suite ID
+     * @param soft optional soft delete parameter (1 to preview, 0 or null to delete)
+     */
+    public void deleteSuite(Integer suiteId, Integer soft) {
+        log.info("Deleting suite: {}", suiteId);
+        String uri = "delete_suite/" + suiteId;
+        if (soft != null) {
+            uri += "?soft=" + soft;
+        }
+        post(uri, null, Void.class);
+    }
+
+    // ==================== Milestones API ====================
+
+    /**
+     * Gets a milestone by ID.
+     *
+     * @param milestoneId the milestone ID
+     * @return the milestone
+     */
+    public Milestone getMilestone(Integer milestoneId) {
+        log.debug("Getting milestone: {}", milestoneId);
+        return get("get_milestone/" + milestoneId, Milestone.class);
+    }
+
+    /**
+     * Gets milestones for a project with optional filters.
+     *
+     * @param projectId the project ID
+     * @param isCompleted optional filter for completion status
+     * @param isStarted optional filter for started status
+     * @param limit maximum results (default 250)
+     * @param offset pagination offset
+     * @return list of milestones
+     */
+    public Object[] getMilestones(Integer projectId, Boolean isCompleted, Boolean isStarted, Integer limit, Integer offset) {
+        log.debug("Getting milestones for project: {}", projectId);
+        
+        StringBuilder uri = new StringBuilder("get_milestones/" + projectId);
+        String separator = "?";
+        
+        if (isCompleted != null) {
+            uri.append(separator).append("is_completed=").append(isCompleted ? 1 : 0);
+            separator = "&";
+        }
+        if (isStarted != null) {
+            uri.append(separator).append("is_started=").append(isStarted ? 1 : 0);
+            separator = "&";
+        }
+        if (limit != null) {
+            uri.append(separator).append("limit=").append(limit);
+            separator = "&";
+        }
+        if (offset != null) {
+            uri.append(separator).append("offset=").append(offset);
+        }
+        
+        JsonNode response = get(uri.toString(), JsonNode.class);
+        return extractList(response, "milestones", Milestone.class).toArray();
+    }
+
+    /**
+     * Adds a new milestone to a project.
+     *
+     * @param projectId the project ID
+     * @param milestone the milestone data
+     * @return the created milestone
+     */
+    public Milestone addMilestone(Integer projectId, Map<String, Object> milestone) {
+        log.info("Adding milestone to project: {}", projectId);
+        return post("add_milestone/" + projectId, milestone, Milestone.class);
+    }
+
+    /**
+     * Updates a milestone.
+     *
+     * @param milestoneId the milestone ID
+     * @param milestone the milestone data
+     * @return the updated milestone
+     */
+    public Milestone updateMilestone(Integer milestoneId, Map<String, Object> milestone) {
+        log.info("Updating milestone: {}", milestoneId);
+        return post("update_milestone/" + milestoneId, milestone, Milestone.class);
+    }
+
+    /**
+     * Deletes a milestone.
+     *
+     * @param milestoneId the milestone ID
+     */
+    public void deleteMilestone(Integer milestoneId) {
+        log.info("Deleting milestone: {}", milestoneId);
+        post("delete_milestone/" + milestoneId, null, Void.class);
+    }
+
     // ==================== Tests API ====================
 
     /**

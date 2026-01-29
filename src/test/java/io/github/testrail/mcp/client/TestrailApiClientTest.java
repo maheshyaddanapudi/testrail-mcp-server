@@ -1131,4 +1131,255 @@ class TestrailApiClientTest {
         RecordedRequest request = mockWebServer.takeRequest();
         assertThat(request.getPath()).isEqualTo("/delete_plan/123");
     }
+
+    // ==================== Users API Tests ====================
+
+    @Test
+    void testGetUser() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"John Doe\",\"email\":\"john@example.com\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.User user = apiClient.getUser(1);
+
+        assertThat(user.getId()).isEqualTo(1);
+        assertThat(user.getName()).isEqualTo("John Doe");
+        assertThat(user.getEmail()).isEqualTo("john@example.com");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_user/1");
+    }
+
+    @Test
+    void testGetCurrentUser() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"Current User\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.User user = apiClient.getCurrentUser();
+
+        assertThat(user.getId()).isEqualTo(1);
+        assertThat(user.getName()).isEqualTo("Current User");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_current_user");
+    }
+
+    @Test
+    void testGetUserByEmail() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"email\":\"john@example.com\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.User user = apiClient.getUserByEmail("john@example.com");
+
+        assertThat(user.getId()).isEqualTo(1);
+        assertThat(user.getEmail()).isEqualTo("john@example.com");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_user_by_email&email=john@example.com");
+    }
+
+    @Test
+    void testGetUsers() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"User 1\"},{\"id\":2,\"name\":\"User 2\"}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] users = apiClient.getUsers(null);
+
+        assertThat(users).hasSize(2);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_users");
+    }
+
+    @Test
+    void testGetUsersForProject() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"User 1\"}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] users = apiClient.getUsers(1);
+
+        assertThat(users).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_users/1");
+    }
+
+    // ==================== Suites API Tests ====================
+
+    @Test
+    void testGetSuite() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"API Tests\",\"project_id\":1}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Suite suite = apiClient.getSuite(1);
+
+        assertThat(suite.getId()).isEqualTo(1);
+        assertThat(suite.getName()).isEqualTo("API Tests");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_suite/1");
+    }
+
+    @Test
+    void testGetSuites() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"suites\":[{\"id\":1,\"name\":\"Suite 1\"},{\"id\":2,\"name\":\"Suite 2\"}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] suites = apiClient.getSuites(1);
+
+        assertThat(suites).hasSize(2);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_suites/1");
+    }
+
+    @Test
+    void testAddSuite() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"New Suite\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Suite suite = apiClient.addSuite(1, Map.of("name", "New Suite"));
+
+        assertThat(suite.getId()).isEqualTo(1);
+        assertThat(suite.getName()).isEqualTo("New Suite");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_suite/1");
+    }
+
+    @Test
+    void testUpdateSuite() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"Updated Suite\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Suite suite = apiClient.updateSuite(1, Map.of("name", "Updated Suite"));
+
+        assertThat(suite.getId()).isEqualTo(1);
+        assertThat(suite.getName()).isEqualTo("Updated Suite");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_suite/1");
+    }
+
+    @Test
+    void testDeleteSuite() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteSuite(1, null);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_suite/1");
+    }
+
+    @Test
+    void testDeleteSuiteSoft() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteSuite(1, 1);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_suite/1?soft=1");
+    }
+
+    // ==================== Milestones API Tests ====================
+
+    @Test
+    void testGetMilestone() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"Sprint 1\",\"project_id\":1}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Milestone milestone = apiClient.getMilestone(1);
+
+        assertThat(milestone.getId()).isEqualTo(1);
+        assertThat(milestone.getName()).isEqualTo("Sprint 1");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_milestone/1");
+    }
+
+    @Test
+    void testGetMilestones() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"milestones\":[{\"id\":1,\"name\":\"Milestone 1\"},{\"id\":2,\"name\":\"Milestone 2\"}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] milestones = apiClient.getMilestones(1, null, null, null, null);
+
+        assertThat(milestones).hasSize(2);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_milestones/1");
+    }
+
+    @Test
+    void testGetMilestonesWithFilters() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"milestones\":[{\"id\":1,\"name\":\"Milestone 1\"}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Object[] milestones = apiClient.getMilestones(1, true, false, 100, 0);
+
+        assertThat(milestones).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_milestones/1?is_completed=1&is_started=0&limit=100&offset=0");
+    }
+
+    @Test
+    void testAddMilestone() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"Sprint 2\"}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Milestone milestone = apiClient.addMilestone(1, Map.of("name", "Sprint 2"));
+
+        assertThat(milestone.getId()).isEqualTo(1);
+        assertThat(milestone.getName()).isEqualTo("Sprint 2");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_milestone/1");
+    }
+
+    @Test
+    void testUpdateMilestone() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"name\":\"Updated Milestone\",\"is_completed\":true}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Milestone milestone = apiClient.updateMilestone(1, Map.of("is_completed", true));
+
+        assertThat(milestone.getId()).isEqualTo(1);
+        assertThat(milestone.getIsCompleted()).isTrue();
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_milestone/1");
+    }
+
+    @Test
+    void testDeleteMilestone() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteMilestone(1);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_milestone/1");
+    }
 }
