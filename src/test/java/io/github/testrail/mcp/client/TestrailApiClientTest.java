@@ -9,6 +9,12 @@ import io.github.testrail.mcp.model.TestResult;
 import io.github.testrail.mcp.model.Section;
 import io.github.testrail.mcp.client.TestrailApiException;
 import io.github.testrail.mcp.model.TestPlan;
+import io.github.testrail.mcp.model.Attachment;
+import io.github.testrail.mcp.model.SharedStep;
+import io.github.testrail.mcp.model.SharedStepHistory;
+import io.github.testrail.mcp.model.Report;
+import io.github.testrail.mcp.model.Role;
+import com.fasterxml.jackson.databind.JsonNode;
 // Note: Test class is NOT imported to avoid conflict with JUnit @Test annotation
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -1594,5 +1600,293 @@ class TestrailApiClientTest {
         assertThat(fields).hasSize(1);
         RecordedRequest request = mockWebServer.takeRequest();
         assertThat(request.getPath()).isEqualTo("/get_result_fields");
+    }
+
+    // ==================== Attachments Tests ====================
+
+    @Test
+    void testGetAttachmentsForCase() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"attachments\":[{\"id\":1,\"name\":\"test.jpg\",\"size\":1024}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Attachment> attachments = apiClient.getAttachmentsForCase(123, null, null);
+
+        assertThat(attachments).hasSize(1);
+        assertThat(attachments.get(0).getName()).isEqualTo("test.jpg");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_attachments_for_case/123");
+    }
+
+    @Test
+    void testGetAttachmentsForCaseWithPagination() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"attachments\":[{\"id\":1,\"name\":\"test.jpg\",\"size\":1024}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Attachment> attachments = apiClient.getAttachmentsForCase(123, 10, 5);
+
+        assertThat(attachments).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_attachments_for_case/123?limit=10&offset=5");
+    }
+
+    @Test
+    void testGetAttachmentsForPlan() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"plan_attachment.pdf\",\"size\":2048}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Attachment> attachments = apiClient.getAttachmentsForPlan(456, null, null);
+
+        assertThat(attachments).hasSize(1);
+        assertThat(attachments.get(0).getName()).isEqualTo("plan_attachment.pdf");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_attachments_for_plan/456");
+    }
+
+    @Test
+    void testGetAttachmentsForPlanEntry() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"entry_file.txt\",\"size\":512}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Attachment> attachments = apiClient.getAttachmentsForPlanEntry(789, "abc-123");
+
+        assertThat(attachments).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_attachments_for_plan_entry/789/abc-123");
+    }
+
+    @Test
+    void testGetAttachmentsForRun() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"attachments\":[{\"id\":1,\"name\":\"run_log.txt\",\"size\":4096}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Attachment> attachments = apiClient.getAttachmentsForRun(111, null, null);
+
+        assertThat(attachments).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_attachments_for_run/111");
+    }
+
+    @Test
+    void testGetAttachmentsForTest() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"attachments\":[{\"id\":1,\"name\":\"test_screenshot.png\",\"size\":8192}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Attachment> attachments = apiClient.getAttachmentsForTest(222);
+
+        assertThat(attachments).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_attachments_for_test/222");
+    }
+
+    @Test
+    void testGetAttachment() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":\"uuid-123\",\"name\":\"document.pdf\",\"size\":16384}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Attachment attachment = apiClient.getAttachment("uuid-123");
+
+        assertThat(attachment.getName()).isEqualTo("document.pdf");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_attachment/uuid-123");
+    }
+
+    @Test
+    void testDeleteAttachment() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteAttachment("uuid-456");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_attachment/uuid-456");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    // ==================== Shared Steps Tests ====================
+
+    @Test
+    void testGetSharedStep() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"title\":\"Login Steps\",\"project_id\":10}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        SharedStep sharedStep = apiClient.getSharedStep(1);
+
+        assertThat(sharedStep.getId()).isEqualTo(1);
+        assertThat(sharedStep.getTitle()).isEqualTo("Login Steps");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_shared_step/1");
+    }
+
+    @Test
+    void testGetSharedStepHistory() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"shared_step_id\":1,\"version_id\":1,\"title\":\"Login Steps v1\"}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<SharedStepHistory> history = apiClient.getSharedStepHistory(1);
+
+        assertThat(history).hasSize(1);
+        assertThat(history.get(0).getSharedStepId()).isEqualTo(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_shared_step_history/1");
+    }
+
+    @Test
+    void testGetSharedSteps() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"title\":\"Login Steps\"},{\"id\":2,\"title\":\"Logout Steps\"}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<SharedStep> sharedSteps = apiClient.getSharedSteps(10);
+
+        assertThat(sharedSteps).hasSize(2);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_shared_steps/10");
+    }
+
+    @Test
+    void testAddSharedStep() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":3,\"title\":\"New Shared Step\",\"project_id\":10}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("title", "New Shared Step");
+        SharedStep sharedStep = apiClient.addSharedStep(10, data);
+
+        assertThat(sharedStep.getId()).isEqualTo(3);
+        assertThat(sharedStep.getTitle()).isEqualTo("New Shared Step");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_shared_step/10");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    @Test
+    void testUpdateSharedStep() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"id\":1,\"title\":\"Updated Login Steps\",\"project_id\":10}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("title", "Updated Login Steps");
+        SharedStep sharedStep = apiClient.updateSharedStep(1, data);
+
+        assertThat(sharedStep.getTitle()).isEqualTo("Updated Login Steps");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_shared_step/1");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    @Test
+    void testDeleteSharedStep() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deleteSharedStep(1);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_shared_step/1");
+        assertThat(request.getMethod()).isEqualTo("POST");
+    }
+
+    // ==================== Reports Tests ====================
+
+    @Test
+    void testGetReports() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"Test Summary Report\",\"report_template_id\":100}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Report> reports = apiClient.getReports(10);
+
+        assertThat(reports).hasSize(1);
+        assertThat(reports.get(0).getName()).isEqualTo("Test Summary Report");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_reports/10");
+    }
+
+    @Test
+    void testRunReport() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"report_data\":{\"total_tests\":100,\"passed\":85}}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        JsonNode reportData = apiClient.runReport(100);
+
+        assertThat(reportData).isNotNull();
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/run_report/100");
+    }
+
+    @Test
+    void testGetCrossProjectReports() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("[{\"id\":1,\"name\":\"Cross-Project Summary\",\"is_cross_project\":true}]")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Report> reports = apiClient.getCrossProjectReports();
+
+        assertThat(reports).hasSize(1);
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_cross_project_reports/");
+    }
+
+    @Test
+    void testRunCrossProjectReport() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"report_data\":{\"total_projects\":5,\"total_tests\":500}}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        JsonNode reportData = apiClient.runCrossProjectReport(200);
+
+        assertThat(reportData).isNotNull();
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/run_cross_project_report/200");
+    }
+
+    // ==================== Roles Tests ====================
+
+    @Test
+    void testGetRoles() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"roles\":[{\"id\":1,\"name\":\"Tester\",\"is_default\":false},{\"id\":2,\"name\":\"Lead\",\"is_default\":true}]}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<Role> roles = apiClient.getRoles();
+
+        assertThat(roles).hasSize(2);
+        assertThat(roles.get(0).getName()).isEqualTo("Tester");
+        assertThat(roles.get(1).getIsDefault()).isTrue();
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_roles");
     }
 }

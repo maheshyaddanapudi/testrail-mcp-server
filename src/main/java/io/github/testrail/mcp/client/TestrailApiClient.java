@@ -1072,6 +1072,257 @@ public class TestrailApiClient {
         return extractListDirect(response, ResultField.class).toArray();
     }
 
+    // ==================== Attachments API ====================
+
+    /**
+     * Gets attachments for a test case.
+     *
+     * @param caseId the test case ID
+     * @param limit optional maximum results
+     * @param offset optional pagination offset
+     * @return list of attachments
+     */
+    public List<Attachment> getAttachmentsForCase(Integer caseId, Integer limit, Integer offset) {
+        log.debug("Getting attachments for case: {}", caseId);
+        StringBuilder uri = new StringBuilder("get_attachments_for_case/" + caseId);
+        String separator = "?";
+        if (limit != null) {
+            uri.append(separator).append("limit=").append(limit);
+            separator = "&";
+        }
+        if (offset != null) {
+            uri.append(separator).append("offset=").append(offset);
+        }
+        JsonNode response = get(uri.toString(), JsonNode.class);
+        return extractList(response, "attachments", Attachment.class);
+    }
+
+    /**
+     * Gets attachments for a test plan.
+     *
+     * @param planId the test plan ID
+     * @param limit optional maximum results
+     * @param offset optional pagination offset
+     * @return list of attachments
+     */
+    public List<Attachment> getAttachmentsForPlan(Integer planId, Integer limit, Integer offset) {
+        log.debug("Getting attachments for plan: {}", planId);
+        StringBuilder uri = new StringBuilder("get_attachments_for_plan/" + planId);
+        String separator = "?";
+        if (limit != null) {
+            uri.append(separator).append("limit=").append(limit);
+            separator = "&";
+        }
+        if (offset != null) {
+            uri.append(separator).append("offset=").append(offset);
+        }
+        JsonNode response = get(uri.toString(), JsonNode.class);
+        return extractListDirect(response, Attachment.class);
+    }
+
+    /**
+     * Gets attachments for a test plan entry.
+     *
+     * @param planId the test plan ID
+     * @param entryId the plan entry ID
+     * @return list of attachments
+     */
+    public List<Attachment> getAttachmentsForPlanEntry(Integer planId, String entryId) {
+        log.debug("Getting attachments for plan entry: {}/{}", planId, entryId);
+        JsonNode response = get("get_attachments_for_plan_entry/" + planId + "/" + entryId, JsonNode.class);
+        return extractListDirect(response, Attachment.class);
+    }
+
+    /**
+     * Gets attachments for a test run.
+     *
+     * @param runId the test run ID
+     * @param limit optional maximum results
+     * @param offset optional pagination offset
+     * @return list of attachments
+     */
+    public List<Attachment> getAttachmentsForRun(Integer runId, Integer limit, Integer offset) {
+        log.debug("Getting attachments for run: {}", runId);
+        StringBuilder uri = new StringBuilder("get_attachments_for_run/" + runId);
+        String separator = "?";
+        if (limit != null) {
+            uri.append(separator).append("limit=").append(limit);
+            separator = "&";
+        }
+        if (offset != null) {
+            uri.append(separator).append("offset=").append(offset);
+        }
+        JsonNode response = get(uri.toString(), JsonNode.class);
+        return extractList(response, "attachments", Attachment.class);
+    }
+
+    /**
+     * Gets attachments for a test.
+     *
+     * @param testId the test ID
+     * @return list of attachments
+     */
+    public List<Attachment> getAttachmentsForTest(Integer testId) {
+        log.debug("Getting attachments for test: {}", testId);
+        JsonNode response = get("get_attachments_for_test/" + testId, JsonNode.class);
+        return extractList(response, "attachments", Attachment.class);
+    }
+
+    /**
+     * Gets a single attachment by ID.
+     *
+     * @param attachmentId the attachment ID
+     * @return the attachment
+     */
+    public Attachment getAttachment(String attachmentId) {
+        log.debug("Getting attachment: {}", attachmentId);
+        return get("get_attachment/" + attachmentId, Attachment.class);
+    }
+
+    /**
+     * Deletes an attachment.
+     *
+     * @param attachmentId the attachment ID
+     */
+    public void deleteAttachment(String attachmentId) {
+        log.info("Deleting attachment: {}", attachmentId);
+        post("delete_attachment/" + attachmentId, null, Void.class);
+    }
+
+    // Note: add_attachment_to_* methods require multipart/form-data and file upload
+    // These are not implemented in this phase as they require special handling
+
+    // ==================== Shared Steps API ====================
+
+    /**
+     * Gets a shared step by ID.
+     *
+     * @param sharedStepId the shared step ID
+     * @return the shared step
+     */
+    public SharedStep getSharedStep(Integer sharedStepId) {
+        log.debug("Getting shared step: {}", sharedStepId);
+        return get("get_shared_step/" + sharedStepId, SharedStep.class);
+    }
+
+    /**
+     * Gets shared step history.
+     *
+     * @param sharedStepId the shared step ID
+     * @return list of shared step history entries
+     */
+    public List<SharedStepHistory> getSharedStepHistory(Integer sharedStepId) {
+        log.debug("Getting shared step history: {}", sharedStepId);
+        JsonNode response = get("get_shared_step_history/" + sharedStepId, JsonNode.class);
+        return extractListDirect(response, SharedStepHistory.class);
+    }
+
+    /**
+     * Gets all shared steps for a project.
+     *
+     * @param projectId the project ID
+     * @return list of shared steps
+     */
+    public List<SharedStep> getSharedSteps(Integer projectId) {
+        log.debug("Getting shared steps for project: {}", projectId);
+        JsonNode response = get("get_shared_steps/" + projectId, JsonNode.class);
+        return extractListDirect(response, SharedStep.class);
+    }
+
+    /**
+     * Adds a new shared step.
+     *
+     * @param projectId the project ID
+     * @param data the shared step data
+     * @return the created shared step
+     */
+    public SharedStep addSharedStep(Integer projectId, Map<String, Object> data) {
+        log.info("Adding shared step to project: {}", projectId);
+        return post("add_shared_step/" + projectId, data, SharedStep.class);
+    }
+
+    /**
+     * Updates a shared step.
+     *
+     * @param sharedStepId the shared step ID
+     * @param data the update data
+     * @return the updated shared step
+     */
+    public SharedStep updateSharedStep(Integer sharedStepId, Map<String, Object> data) {
+        log.info("Updating shared step: {}", sharedStepId);
+        return post("update_shared_step/" + sharedStepId, data, SharedStep.class);
+    }
+
+    /**
+     * Deletes a shared step.
+     *
+     * @param sharedStepId the shared step ID
+     */
+    public void deleteSharedStep(Integer sharedStepId) {
+        log.info("Deleting shared step: {}", sharedStepId);
+        post("delete_shared_step/" + sharedStepId, null, Void.class);
+    }
+
+    // ==================== Reports API ====================
+
+    /**
+     * Gets all API-accessible reports for a project.
+     *
+     * @param projectId the project ID
+     * @return list of reports
+     */
+    public List<Report> getReports(Integer projectId) {
+        log.debug("Getting reports for project: {}", projectId);
+        JsonNode response = get("get_reports/" + projectId, JsonNode.class);
+        return extractListDirect(response, Report.class);
+    }
+
+    /**
+     * Runs a single-project report.
+     *
+     * @param reportTemplateId the report template ID
+     * @return the report data as JsonNode
+     */
+    public JsonNode runReport(Integer reportTemplateId) {
+        log.info("Running report: {}", reportTemplateId);
+        return get("run_report/" + reportTemplateId, JsonNode.class);
+    }
+
+    /**
+     * Gets all cross-project reports.
+     *
+     * @return list of cross-project reports
+     */
+    public List<Report> getCrossProjectReports() {
+        log.debug("Getting cross-project reports");
+        JsonNode response = get("get_cross_project_reports/", JsonNode.class);
+        return extractListDirect(response, Report.class);
+    }
+
+    /**
+     * Runs a cross-project report.
+     *
+     * @param reportTemplateId the report template ID
+     * @return the report data as JsonNode
+     */
+    public JsonNode runCrossProjectReport(Integer reportTemplateId) {
+        log.info("Running cross-project report: {}", reportTemplateId);
+        return get("run_cross_project_report/" + reportTemplateId, JsonNode.class);
+    }
+
+    // ==================== Roles API ====================
+
+    /**
+     * Gets all available roles.
+     *
+     * @return list of roles
+     */
+    public List<Role> getRoles() {
+        log.debug("Getting roles");
+        JsonNode response = get("get_roles", JsonNode.class);
+        return extractList(response, "roles", Role.class);
+    }
+
     // ==================== Helper Methods ====================
 
     private <T> T get(String uri, Class<T> responseType) {
