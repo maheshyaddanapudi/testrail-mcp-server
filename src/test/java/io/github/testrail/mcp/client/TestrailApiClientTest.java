@@ -1,7 +1,15 @@
 package io.github.testrail.mcp.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.testrail.mcp.model.*;
+import io.github.testrail.mcp.model.OperationResult;
+import io.github.testrail.mcp.model.Project;
+import io.github.testrail.mcp.model.TestCase;
+import io.github.testrail.mcp.model.TestRun;
+import io.github.testrail.mcp.model.TestResult;
+import io.github.testrail.mcp.model.Section;
+import io.github.testrail.mcp.client.TestrailApiException;
+import io.github.testrail.mcp.model.TestPlan;
+// Note: Test class is NOT imported to avoid conflict with JUnit @Test annotation
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -872,5 +880,255 @@ class TestrailApiClientTest {
         assertThat(request.getPath()).contains("status_id=1,5");
         assertThat(request.getPath()).contains("limit=100");
         assertThat(request.getPath()).contains("offset=50");
+    }
+
+    // ==================== Tests API Tests ====================
+
+    @Test
+    @DisplayName("getTest should retrieve test by ID")
+    void testGetTest() throws Exception {
+        io.github.testrail.mcp.model.Test test = new io.github.testrail.mcp.model.Test();
+        test.setId(123);
+        test.setTitle("Test login functionality");
+        test.setStatusId(1);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(test))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Test result = apiClient.getTest(123, null);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(123);
+        assertThat(result.getTitle()).isEqualTo("Test login functionality");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_test/123");
+    }
+
+    @Test
+    @DisplayName("getTest should retrieve test with data parameter")
+    void testGetTestWithData() throws Exception {
+        io.github.testrail.mcp.model.Test test = new io.github.testrail.mcp.model.Test();
+        test.setId(456);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(test))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.Test result = apiClient.getTest(456, "steps");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(456);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_test/456?with_data=steps");
+    }
+
+    @Test
+    @DisplayName("getTests should retrieve tests for a run")
+    void testGetTests() throws Exception {
+        io.github.testrail.mcp.model.Test test1 = new io.github.testrail.mcp.model.Test();
+        test1.setId(1);
+        test1.setTitle("Test 1");
+
+        io.github.testrail.mcp.model.Test test2 = new io.github.testrail.mcp.model.Test();
+        test2.setId(2);
+        test2.setTitle("Test 2");
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("tests", List.of(test1, test2));
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<io.github.testrail.mcp.model.Test> result = apiClient.getTests(100, null, null, null, null);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getTitle()).isEqualTo("Test 1");
+        assertThat(result.get(1).getTitle()).isEqualTo("Test 2");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_tests/100");
+    }
+
+    @Test
+    @DisplayName("getTests should apply all filters")
+    void testGetTestsWithFilters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        response.put("tests", new ArrayList<>());
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.getTests(100, "1,4,5", "10,20", 50, 100);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_tests/100");
+        assertThat(request.getPath()).contains("status_id=1,4,5");
+        assertThat(request.getPath()).contains("label_id=10,20");
+        assertThat(request.getPath()).contains("limit=50");
+        assertThat(request.getPath()).contains("offset=100");
+    }
+
+    // ==================== Plans API Tests ====================
+
+    @Test
+    @DisplayName("getPlan should retrieve plan by ID")
+    void testGetPlan() throws Exception {
+        io.github.testrail.mcp.model.TestPlan plan = new io.github.testrail.mcp.model.TestPlan();
+        plan.setId(123);
+        plan.setName("Sprint 23 Testing");
+        plan.setIsCompleted(false);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(plan))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.TestPlan result = apiClient.getPlan(123);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(123);
+        assertThat(result.getName()).isEqualTo("Sprint 23 Testing");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_plan/123");
+    }
+
+    @Test
+    @DisplayName("getPlans should retrieve plans for a project")
+    void testGetPlans() throws Exception {
+        io.github.testrail.mcp.model.TestPlan plan1 = new io.github.testrail.mcp.model.TestPlan();
+        plan1.setId(1);
+        plan1.setName("Plan 1");
+
+        io.github.testrail.mcp.model.TestPlan plan2 = new io.github.testrail.mcp.model.TestPlan();
+        plan2.setId(2);
+        plan2.setName("Plan 2");
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("plans", List.of(plan1, plan2));
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        List<io.github.testrail.mcp.model.TestPlan> result = apiClient.getPlans(1, null, null, null, null, null, null, null);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getName()).isEqualTo("Plan 1");
+        assertThat(result.get(1).getName()).isEqualTo("Plan 2");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/get_plans/1");
+    }
+
+    @Test
+    @DisplayName("getPlans should apply all filters")
+    void testGetPlansWithFilters() throws Exception {
+        Map<String, Object> response = new HashMap<>();
+        response.put("plans", new ArrayList<>());
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(response))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.getPlans(1, 1640000000L, 1650000000L, "1,2", 1, "5,10", 50, 100);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).contains("/get_plans/1");
+        assertThat(request.getPath()).contains("created_after=1640000000");
+        assertThat(request.getPath()).contains("created_before=1650000000");
+        assertThat(request.getPath()).contains("created_by=1,2");
+        assertThat(request.getPath()).contains("is_completed=1");
+        assertThat(request.getPath()).contains("milestone_id=5,10");
+        assertThat(request.getPath()).contains("limit=50");
+        assertThat(request.getPath()).contains("offset=100");
+    }
+
+    @Test
+    @DisplayName("addPlan should create a new plan")
+    void testAddPlan() throws Exception {
+        io.github.testrail.mcp.model.TestPlan plan = new io.github.testrail.mcp.model.TestPlan();
+        plan.setId(123);
+        plan.setName("Sprint 24 Testing");
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(plan))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "Sprint 24 Testing");
+        data.put("description", "Test plan for sprint 24");
+
+        io.github.testrail.mcp.model.TestPlan result = apiClient.addPlan(1, data);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(123);
+        assertThat(result.getName()).isEqualTo("Sprint 24 Testing");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/add_plan/1");
+    }
+
+    @Test
+    @DisplayName("updatePlan should update an existing plan")
+    void testUpdatePlan() throws Exception {
+        io.github.testrail.mcp.model.TestPlan plan = new io.github.testrail.mcp.model.TestPlan();
+        plan.setId(123);
+        plan.setName("Updated Plan Name");
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(plan))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "Updated Plan Name");
+
+        io.github.testrail.mcp.model.TestPlan result = apiClient.updatePlan(123, data);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(123);
+        assertThat(result.getName()).isEqualTo("Updated Plan Name");
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/update_plan/123");
+    }
+
+    @Test
+    @DisplayName("closePlan should close a plan")
+    void testClosePlan() throws Exception {
+        io.github.testrail.mcp.model.TestPlan plan = new io.github.testrail.mcp.model.TestPlan();
+        plan.setId(123);
+        plan.setIsCompleted(true);
+
+        mockWebServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(plan))
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        io.github.testrail.mcp.model.TestPlan result = apiClient.closePlan(123);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(123);
+        assertThat(result.getIsCompleted()).isTrue();
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/close_plan/123");
+    }
+
+    @Test
+    @DisplayName("deletePlan should delete a plan")
+    void testDeletePlan() throws Exception {
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{}")
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
+
+        apiClient.deletePlan(123);
+
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/delete_plan/123");
     }
 }

@@ -537,6 +537,174 @@ public class TestrailApiClient {
         return post("move_section/" + sectionId, data, Section.class);
     }
 
+    // ==================== Plans API ====================
+
+    /**
+     * Gets a test plan by ID.
+     *
+     * @param planId the plan ID
+     * @return the test plan
+     */
+    public TestPlan getPlan(Integer planId) {
+        log.debug("Getting test plan: {}", planId);
+        return get("get_plan/" + planId, TestPlan.class);
+    }
+
+    /**
+     * Gets test plans for a project with optional filters.
+     *
+     * @param projectId the project ID
+     * @param createdAfter optional timestamp - only return plans created after this date
+     * @param createdBefore optional timestamp - only return plans created before this date
+     * @param createdBy optional comma-separated list of creator user IDs
+     * @param isCompleted optional - 1 for completed only, 0 for active only
+     * @param milestoneId optional comma-separated list of milestone IDs
+     * @param limit maximum results (default 250)
+     * @param offset pagination offset
+     * @return list of test plans
+     */
+    public List<TestPlan> getPlans(Integer projectId, Long createdAfter, Long createdBefore,
+                                    String createdBy, Integer isCompleted, String milestoneId,
+                                    Integer limit, Integer offset) {
+        log.debug("Getting test plans for project: {}", projectId);
+
+        StringBuilder uri = new StringBuilder("get_plans/" + projectId);
+        String separator = "?";
+
+        if (createdAfter != null) {
+            uri.append(separator).append("created_after=").append(createdAfter);
+            separator = "&";
+        }
+        if (createdBefore != null) {
+            uri.append(separator).append("created_before=").append(createdBefore);
+            separator = "&";
+        }
+        if (createdBy != null && !createdBy.isEmpty()) {
+            uri.append(separator).append("created_by=").append(createdBy);
+            separator = "&";
+        }
+        if (isCompleted != null) {
+            uri.append(separator).append("is_completed=").append(isCompleted);
+            separator = "&";
+        }
+        if (milestoneId != null && !milestoneId.isEmpty()) {
+            uri.append(separator).append("milestone_id=").append(milestoneId);
+            separator = "&";
+        }
+        if (limit != null) {
+            uri.append(separator).append("limit=").append(limit);
+            separator = "&";
+        }
+        if (offset != null) {
+            uri.append(separator).append("offset=").append(offset);
+        }
+
+        JsonNode response = get(uri.toString(), JsonNode.class);
+        return extractList(response, "plans", TestPlan.class);
+    }
+
+    /**
+     * Adds a new test plan.
+     *
+     * @param projectId the project ID
+     * @param data the plan data
+     * @return the created test plan
+     */
+    public TestPlan addPlan(Integer projectId, Map<String, Object> data) {
+        log.info("Adding test plan to project: {}", projectId);
+        return post("add_plan/" + projectId, data, TestPlan.class);
+    }
+
+    /**
+     * Updates an existing test plan.
+     *
+     * @param planId the plan ID
+     * @param data the update data
+     * @return the updated test plan
+     */
+    public TestPlan updatePlan(Integer planId, Map<String, Object> data) {
+        log.info("Updating test plan: {}", planId);
+        return post("update_plan/" + planId, data, TestPlan.class);
+    }
+
+    /**
+     * Closes a test plan.
+     *
+     * @param planId the plan ID
+     * @return the closed test plan
+     */
+    public TestPlan closePlan(Integer planId) {
+        log.info("Closing test plan: {}", planId);
+        return post("close_plan/" + planId, null, TestPlan.class);
+    }
+
+    /**
+     * Deletes a test plan.
+     *
+     * @param planId the plan ID
+     */
+    public void deletePlan(Integer planId) {
+        log.info("Deleting test plan: {}", planId);
+        post("delete_plan/" + planId, null, Void.class);
+    }
+
+    // ==================== Tests API ====================
+
+    /**
+     * Gets a test by ID.
+     *
+     * @param testId the test ID
+     * @param withData optional parameter to get data
+     * @return the test
+     */
+    public Test getTest(Integer testId, String withData) {
+        log.debug("Getting test: {}", testId);
+        
+        StringBuilder uri = new StringBuilder("get_test/" + testId);
+        if (withData != null && !withData.isEmpty()) {
+            uri.append("?with_data=").append(withData);
+        }
+        
+        return get(uri.toString(), Test.class);
+    }
+
+    /**
+     * Gets tests for a test run with optional filters.
+     *
+     * @param runId the test run ID
+     * @param statusId optional comma-separated list of status IDs
+     * @param labelId optional comma-separated list of label IDs
+     * @param limit maximum results (default 250)
+     * @param offset pagination offset
+     * @return list of tests
+     */
+    public List<Test> getTests(Integer runId, String statusId, String labelId,
+                                Integer limit, Integer offset) {
+        log.debug("Getting tests for run: {}", runId);
+
+        StringBuilder uri = new StringBuilder("get_tests/" + runId);
+        String separator = "?";
+
+        if (statusId != null && !statusId.isEmpty()) {
+            uri.append(separator).append("status_id=").append(statusId);
+            separator = "&";
+        }
+        if (labelId != null && !labelId.isEmpty()) {
+            uri.append(separator).append("label_id=").append(labelId);
+            separator = "&";
+        }
+        if (limit != null) {
+            uri.append(separator).append("limit=").append(limit);
+            separator = "&";
+        }
+        if (offset != null) {
+            uri.append(separator).append("offset=").append(offset);
+        }
+
+        JsonNode response = get(uri.toString(), JsonNode.class);
+        return extractList(response, "tests", Test.class);
+    }
+
     // ==================== Helper Methods ====================
 
     private <T> T get(String uri, Class<T> responseType) {
