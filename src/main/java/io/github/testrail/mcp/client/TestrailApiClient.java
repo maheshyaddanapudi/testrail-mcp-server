@@ -478,11 +478,10 @@ public class TestrailApiClient {
 
     private <T> T post(String uri, Object data, Class<T> responseType) {
         try {
-            var requestSpec = webClient.post().uri(uri);
-
-            if (data != null) {
-                requestSpec = requestSpec.bodyValue(data);
-            }
+            WebClient.RequestBodySpec requestBodySpec = webClient.post().uri(uri);
+            WebClient.RequestHeadersSpec<?> requestSpec = data != null
+                    ? requestBodySpec.bodyValue(data)
+                    : requestBodySpec;
 
             if (responseType == Void.class) {
                 requestSpec.retrieve()
