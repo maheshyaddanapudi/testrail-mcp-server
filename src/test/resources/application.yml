@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: testrail-mcp-server-test
+  main:
+    web-application-type: none
+    banner-mode: off
+
+testrail:
+  base-url: http://localhost:8089
+  username: test@example.com
+  api-key: test-api-key
+
+logging:
+  level:
+    root: WARN
+    io.github.testrail.mcp: DEBUG
