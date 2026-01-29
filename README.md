@@ -16,7 +16,19 @@ A Spring Boot MCP (Model Context Protocol) Server that enables AI assistants lik
 - [Development](#development)
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
+- [Documentation](#documentation)
 - [License](#license)
+
+## Documentation
+
+For detailed documentation with comprehensive Mermaid diagrams, see the `docs/` folder:
+
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/ARCHITECTURE.md) | Detailed architecture with class diagrams, component diagrams, and data flow |
+| [Tools Reference](docs/TOOLS.md) | Complete reference for all 26 MCP tools with parameters and examples |
+| [Security](docs/SECURITY.md) | Security architecture, threat model, and credential management |
+| [Integration Guide](docs/INTEGRATION.md) | Step-by-step Cursor IDE integration and troubleshooting |
 
 ## Features
 
