@@ -59,14 +59,14 @@ class ProjectsToolsTest {
         project2.setId(2);
         project2.setName("Project 2");
 
-        when(apiClient.getProjects()).thenReturn(List.of(project1, project2));
+        when(apiClient.getProjects(null, null, null)).thenReturn(List.of(project1, project2));
 
-        List<Project> result = projectsTools.getProjects();
+        List<Project> result = projectsTools.getProjects(null, null, null);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getName()).isEqualTo("Project 1");
         assertThat(result.get(1).getName()).isEqualTo("Project 2");
-        verify(apiClient).getProjects();
+        verify(apiClient).getProjects(null, null, null);
     }
 
     @Test

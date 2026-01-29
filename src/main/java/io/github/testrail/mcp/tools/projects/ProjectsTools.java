@@ -51,24 +51,29 @@ public class ProjectsTools {
     }
 
     @Tool(description = """
-            Retrieves a list of all TestRail projects accessible to the authenticated user.
-            Returns project IDs, names, and basic information for each project.
+            Retrieves all projects from TestRail with optional filters.
+            Returns basic project information including name, announcement, and suite mode.
 
             **When to use:** Use this tool when you need to see all available projects,
-            find a project ID by name, get an overview of the TestRail workspace,
-            or discover which projects you have access to.
+            explore what testing initiatives exist, or find a project ID for further operations.
+            Filter by completion status to see only active or completed projects.
 
             **Might lead to:** get_project (for detailed info), get_test_cases (to explore),
             add_project (to create new).
 
             **Example prompts:**
             - "List all projects"
-            - "Show me available projects in TestRail"
-            - "What projects do we have?"
+            - "Show me active projects in TestRail"
+            - "What completed projects do we have?"
+            - "Get the first 10 projects"
             """)
-    public List<Project> getProjects() {
-        log.info("Tool: get_projects called");
-        return apiClient.getProjects();
+    public List<Project> getProjects(
+            @ToolParam(description = "Filter by completion status: true for completed projects, false for active projects, null for all", required = false) Boolean isCompleted,
+            @ToolParam(description = "Maximum number of projects to return (1-250)", required = false) Integer limit,
+            @ToolParam(description = "Number of projects to skip for pagination", required = false) Integer offset
+    ) {
+        log.info("Tool: get_projects called with filters - isCompleted: {}, limit: {}, offset: {}", isCompleted, limit, offset);
+        return apiClient.getProjects(isCompleted, limit, offset);
     }
 
     @Tool(description = """

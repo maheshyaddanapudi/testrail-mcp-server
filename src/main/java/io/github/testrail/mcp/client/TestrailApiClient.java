@@ -130,13 +130,32 @@ public class TestrailApiClient {
     }
 
     /**
-     * Gets all projects.
+     * Gets all projects with optional filters.
      *
+     * @param isCompleted filter by completion status (true for completed, false for active, null for all)
+     * @param limit maximum results (1-250)
+     * @param offset pagination offset
      * @return list of projects
      */
-    public List<Project> getProjects() {
+    public List<Project> getProjects(Boolean isCompleted, Integer limit, Integer offset) {
         log.debug("Getting all projects");
-        JsonNode response = get("get_projects", JsonNode.class);
+
+        StringBuilder uri = new StringBuilder("get_projects");
+        String separator = "?";
+
+        if (isCompleted != null) {
+            uri.append(separator).append("is_completed=").append(isCompleted ? 1 : 0);
+            separator = "&";
+        }
+        if (limit != null) {
+            uri.append(separator).append("limit=").append(limit);
+            separator = "&";
+        }
+        if (offset != null) {
+            uri.append(separator).append("offset=").append(offset);
+        }
+
+        JsonNode response = get(uri.toString(), JsonNode.class);
         return extractList(response, "projects", Project.class);
     }
 
@@ -187,19 +206,51 @@ public class TestrailApiClient {
     }
 
     /**
-     * Gets test runs for a project.
+     * Gets test runs for a project with optional filters.
      *
      * @param projectId the project ID
-     * @param limit maximum results
+     * @param isCompleted filter by completion status (true for completed, false for active, null for all)
+     * @param createdAfter only return runs created after this timestamp
+     * @param createdBefore only return runs created before this timestamp
+     * @param createdBy comma-separated list of creator user IDs
+     * @param milestoneId comma-separated list of milestone IDs
+     * @param suiteId comma-separated list of suite IDs
+     * @param limit maximum results (1-250)
      * @param offset pagination offset
      * @return list of test runs
      */
-    public List<TestRun> getRuns(Integer projectId, Integer limit, Integer offset) {
+    public List<TestRun> getRuns(Integer projectId, Boolean isCompleted, Long createdAfter,
+                                  Long createdBefore, String createdBy, String milestoneId,
+                                  String suiteId, Integer limit, Integer offset) {
         log.debug("Getting runs for project: {}", projectId);
 
         StringBuilder uri = new StringBuilder("get_runs/" + projectId);
         String separator = "?";
 
+        if (isCompleted != null) {
+            uri.append(separator).append("is_completed=").append(isCompleted ? 1 : 0);
+            separator = "&";
+        }
+        if (createdAfter != null) {
+            uri.append(separator).append("created_after=").append(createdAfter);
+            separator = "&";
+        }
+        if (createdBefore != null) {
+            uri.append(separator).append("created_before=").append(createdBefore);
+            separator = "&";
+        }
+        if (createdBy != null) {
+            uri.append(separator).append("created_by=").append(createdBy);
+            separator = "&";
+        }
+        if (milestoneId != null) {
+            uri.append(separator).append("milestone_id=").append(milestoneId);
+            separator = "&";
+        }
+        if (suiteId != null) {
+            uri.append(separator).append("suite_id=").append(suiteId);
+            separator = "&";
+        }
         if (limit != null) {
             uri.append(separator).append("limit=").append(limit);
             separator = "&";
@@ -260,19 +311,30 @@ public class TestrailApiClient {
     // ==================== Results API ====================
 
     /**
-     * Gets results for a test.
+     * Gets results for a test with optional filters.
      *
      * @param testId the test ID
-     * @param limit maximum results
+     * @param defectsFilter single Defect ID (e.g. TR-1, 4291, etc.)
+     * @param statusId comma-separated list of status IDs to filter by
+     * @param limit maximum results (1-250)
      * @param offset pagination offset
      * @return list of results
      */
-    public List<TestResult> getResults(Integer testId, Integer limit, Integer offset) {
+    public List<TestResult> getResults(Integer testId, String defectsFilter, String statusId,
+                                        Integer limit, Integer offset) {
         log.debug("Getting results for test: {}", testId);
 
         StringBuilder uri = new StringBuilder("get_results/" + testId);
         String separator = "?";
 
+        if (defectsFilter != null) {
+            uri.append(separator).append("defects_filter=").append(defectsFilter);
+            separator = "&";
+        }
+        if (statusId != null) {
+            uri.append(separator).append("status_id=").append(statusId);
+            separator = "&";
+        }
         if (limit != null) {
             uri.append(separator).append("limit=").append(limit);
             separator = "&";
@@ -286,19 +348,46 @@ public class TestrailApiClient {
     }
 
     /**
-     * Gets all results for a run.
+     * Gets all results for a run with optional filters.
      *
      * @param runId the run ID
-     * @param limit maximum results
+     * @param createdAfter only return results created after this timestamp
+     * @param createdBefore only return results created before this timestamp
+     * @param createdBy comma-separated list of creator user IDs
+     * @param defectsFilter single Defect ID (e.g. TR-1, 4291, etc.)
+     * @param statusId comma-separated list of status IDs to filter by
+     * @param limit maximum results (1-250)
      * @param offset pagination offset
      * @return list of results
      */
-    public List<TestResult> getResultsForRun(Integer runId, Integer limit, Integer offset) {
+    public List<TestResult> getResultsForRun(Integer runId, Long createdAfter, Long createdBefore,
+                                              String createdBy, String defectsFilter, String statusId,
+                                              Integer limit, Integer offset) {
         log.debug("Getting results for run: {}", runId);
 
         StringBuilder uri = new StringBuilder("get_results_for_run/" + runId);
         String separator = "?";
 
+        if (createdAfter != null) {
+            uri.append(separator).append("created_after=").append(createdAfter);
+            separator = "&";
+        }
+        if (createdBefore != null) {
+            uri.append(separator).append("created_before=").append(createdBefore);
+            separator = "&";
+        }
+        if (createdBy != null) {
+            uri.append(separator).append("created_by=").append(createdBy);
+            separator = "&";
+        }
+        if (defectsFilter != null) {
+            uri.append(separator).append("defects_filter=").append(defectsFilter);
+            separator = "&";
+        }
+        if (statusId != null) {
+            uri.append(separator).append("status_id=").append(statusId);
+            separator = "&";
+        }
         if (limit != null) {
             uri.append(separator).append("limit=").append(limit);
             separator = "&";

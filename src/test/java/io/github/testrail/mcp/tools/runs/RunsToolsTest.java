@@ -59,12 +59,12 @@ class RunsToolsTest {
         TestRun run2 = new TestRun();
         run2.setId(2);
 
-        when(apiClient.getRuns(1, 50, 0)).thenReturn(List.of(run1, run2));
+        when(apiClient.getRuns(1, null, null, null, null, null, null, 50, 0)).thenReturn(List.of(run1, run2));
 
-        List<TestRun> result = runsTools.getRuns(1, 50, 0);
+        List<TestRun> result = runsTools.getRuns(1, null, null, null, null, null, null, 50, 0);
 
         assertThat(result).hasSize(2);
-        verify(apiClient).getRuns(1, 50, 0);
+        verify(apiClient).getRuns(1, null, null, null, null, null, null, 50, 0);
     }
 
     @Test
