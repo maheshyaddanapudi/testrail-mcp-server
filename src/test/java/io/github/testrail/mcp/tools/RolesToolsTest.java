@@ -1,6 +1,5 @@
 package io.github.testrail.mcp.tools;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.testrail.mcp.client.TestrailApiClient;
 import io.github.testrail.mcp.model.Role;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,16 +20,14 @@ class RolesToolsTest {
     private TestrailApiClient apiClient;
 
     private RolesTools rolesTools;
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
-        rolesTools = new RolesTools(apiClient, objectMapper);
+        rolesTools = new RolesTools(apiClient);
     }
 
     @Test
-    void getRoles_shouldReturnAllRoles() throws Exception {
+    void getRoles_shouldReturnAllRoles() {
         Role role1 = new Role();
         role1.setId(1);
         role1.setName("Tester");
@@ -43,10 +40,12 @@ class RolesToolsTest {
 
         when(apiClient.getRoles()).thenReturn(List.of(role1, role2));
 
-        String result = rolesTools.getRoles();
+        List<Role> result = rolesTools.getRoles();
 
-        assertThat(result).contains("Tester");
-        assertThat(result).contains("Lead");
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getName()).isEqualTo("Tester");
+        assertThat(result.get(1).getName()).isEqualTo("Lead");
+        assertThat(result.get(1).getIsDefault()).isTrue();
         verify(apiClient).getRoles();
     }
 }

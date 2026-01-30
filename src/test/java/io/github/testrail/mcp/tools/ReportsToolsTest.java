@@ -27,20 +27,21 @@ class ReportsToolsTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        reportsTools = new ReportsTools(apiClient, objectMapper);
+        reportsTools = new ReportsTools(apiClient);
     }
 
     @Test
-    void getReports_shouldReturnReports() throws Exception {
+    void getReports_shouldReturnReports() {
         Report report = new Report();
         report.setId(1);
         report.setName("Test Summary");
 
         when(apiClient.getReports(10)).thenReturn(List.of(report));
 
-        String result = reportsTools.getReports(10);
+        List<Report> result = reportsTools.getReports(10);
 
-        assertThat(result).contains("Test Summary");
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getName()).isEqualTo("Test Summary");
         verify(apiClient).getReports(10);
     }
 
@@ -50,23 +51,25 @@ class ReportsToolsTest {
 
         when(apiClient.runReport(100)).thenReturn(reportData);
 
-        String result = reportsTools.runReport(100);
+        JsonNode result = reportsTools.runReport(100);
 
-        assertThat(result).contains("total_tests");
+        assertThat(result.has("total_tests")).isTrue();
+        assertThat(result.get("total_tests").asInt()).isEqualTo(100);
         verify(apiClient).runReport(100);
     }
 
     @Test
-    void getCrossProjectReports_shouldReturnReports() throws Exception {
+    void getCrossProjectReports_shouldReturnReports() {
         Report report = new Report();
         report.setId(2);
         report.setIsCrossProject(true);
 
         when(apiClient.getCrossProjectReports()).thenReturn(List.of(report));
 
-        String result = reportsTools.getCrossProjectReports();
+        List<Report> result = reportsTools.getCrossProjectReports();
 
-        assertThat(result).isNotEmpty();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getIsCrossProject()).isTrue();
         verify(apiClient).getCrossProjectReports();
     }
 
@@ -76,9 +79,10 @@ class ReportsToolsTest {
 
         when(apiClient.runCrossProjectReport(200)).thenReturn(reportData);
 
-        String result = reportsTools.runCrossProjectReport(200);
+        JsonNode result = reportsTools.runCrossProjectReport(200);
 
-        assertThat(result).contains("total_projects");
+        assertThat(result.has("total_projects")).isTrue();
+        assertThat(result.get("total_projects").asInt()).isEqualTo(5);
         verify(apiClient).runCrossProjectReport(200);
     }
 }

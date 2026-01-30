@@ -1,6 +1,5 @@
 package io.github.testrail.mcp.tools;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.testrail.mcp.client.TestrailApiClient;
 import io.github.testrail.mcp.model.SharedStep;
 import io.github.testrail.mcp.model.SharedStepHistory;
@@ -25,44 +24,43 @@ class SharedStepsToolsTest {
     private TestrailApiClient apiClient;
 
     private SharedStepsTools sharedStepsTools;
-    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
-        sharedStepsTools = new SharedStepsTools(apiClient, objectMapper);
+        sharedStepsTools = new SharedStepsTools(apiClient);
     }
 
     @Test
-    void getSharedStep_shouldReturnSharedStep() throws Exception {
+    void getSharedStep_shouldReturnSharedStep() {
         SharedStep sharedStep = new SharedStep();
         sharedStep.setId(1);
         sharedStep.setTitle("Login Steps");
 
         when(apiClient.getSharedStep(1)).thenReturn(sharedStep);
 
-        String result = sharedStepsTools.getSharedStep(1);
+        SharedStep result = sharedStepsTools.getSharedStep(1);
 
-        assertThat(result).contains("Login Steps");
+        assertThat(result.getTitle()).isEqualTo("Login Steps");
         verify(apiClient).getSharedStep(1);
     }
 
     @Test
-    void getSharedStepHistory_shouldReturnHistory() throws Exception {
+    void getSharedStepHistory_shouldReturnHistory() {
         SharedStepHistory history = new SharedStepHistory();
         history.setSharedStepId(1);
         history.setVersionId(1);
 
         when(apiClient.getSharedStepHistory(1)).thenReturn(List.of(history));
 
-        String result = sharedStepsTools.getSharedStepHistory(1);
+        List<SharedStepHistory> result = sharedStepsTools.getSharedStepHistory(1);
 
-        assertThat(result).isNotEmpty();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getSharedStepId()).isEqualTo(1);
         verify(apiClient).getSharedStepHistory(1);
     }
 
     @Test
-    void getSharedSteps_shouldReturnAllSharedSteps() throws Exception {
+    void getSharedSteps_shouldReturnAllSharedSteps() {
         SharedStep step1 = new SharedStep();
         step1.setId(1);
         SharedStep step2 = new SharedStep();
@@ -70,14 +68,14 @@ class SharedStepsToolsTest {
 
         when(apiClient.getSharedSteps(10)).thenReturn(List.of(step1, step2));
 
-        String result = sharedStepsTools.getSharedSteps(10);
+        List<SharedStep> result = sharedStepsTools.getSharedSteps(10);
 
-        assertThat(result).isNotEmpty();
+        assertThat(result).hasSize(2);
         verify(apiClient).getSharedSteps(10);
     }
 
     @Test
-    void addSharedStep_shouldCreateSharedStep() throws Exception {
+    void addSharedStep_shouldCreateSharedStep() {
         SharedStep sharedStep = new SharedStep();
         sharedStep.setId(3);
         sharedStep.setTitle("New Shared Step");
@@ -87,15 +85,14 @@ class SharedStepsToolsTest {
 
         when(apiClient.addSharedStep(eq(10), any(Map.class))).thenReturn(sharedStep);
 
-        String dataJson = objectMapper.writeValueAsString(data);
-        String result = sharedStepsTools.addSharedStep(10, dataJson);
+        SharedStep result = sharedStepsTools.addSharedStep(10, data);
 
-        assertThat(result).contains("New Shared Step");
+        assertThat(result.getTitle()).isEqualTo("New Shared Step");
         verify(apiClient).addSharedStep(eq(10), any(Map.class));
     }
 
     @Test
-    void updateSharedStep_shouldUpdateSharedStep() throws Exception {
+    void updateSharedStep_shouldUpdateSharedStep() {
         SharedStep sharedStep = new SharedStep();
         sharedStep.setId(1);
         sharedStep.setTitle("Updated Steps");
@@ -105,10 +102,9 @@ class SharedStepsToolsTest {
 
         when(apiClient.updateSharedStep(eq(1), any(Map.class))).thenReturn(sharedStep);
 
-        String dataJson = objectMapper.writeValueAsString(data);
-        String result = sharedStepsTools.updateSharedStep(1, dataJson);
+        SharedStep result = sharedStepsTools.updateSharedStep(1, data);
 
-        assertThat(result).contains("Updated Steps");
+        assertThat(result.getTitle()).isEqualTo("Updated Steps");
         verify(apiClient).updateSharedStep(eq(1), any(Map.class));
     }
 
@@ -116,9 +112,8 @@ class SharedStepsToolsTest {
     void deleteSharedStep_shouldDeleteSuccessfully() {
         doNothing().when(apiClient).deleteSharedStep(1);
 
-        String result = sharedStepsTools.deleteSharedStep(1);
+        sharedStepsTools.deleteSharedStep(1);
 
-        assertThat(result).contains("success");
         verify(apiClient).deleteSharedStep(1);
     }
 }
