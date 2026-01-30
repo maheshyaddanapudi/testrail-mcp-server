@@ -1,4 +1,6 @@
-package io.github.testrail.mcp.tools;
+package io.github.testrail.mcp.tools.reports;
+
+import io.github.testrail.mcp.tools.reports.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

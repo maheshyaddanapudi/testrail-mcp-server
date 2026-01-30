@@ -1,4 +1,6 @@
-package io.github.testrail.mcp.tools;
+package io.github.testrail.mcp.tools.bdds;
+
+import io.github.testrail.mcp.tools.bdds.*;
 
 import io.github.testrail.mcp.client.TestrailApiClient;
 import io.github.testrail.mcp.model.TestCase;
