@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-This document provides detailed architectural documentation for the TestRail MCP Server.
+This document provides a detailed overview of the TestRail MCP Server's architecture, including component diagrams, data flow, and the tool discovery mechanism.
 
 ## Table of Contents
 
@@ -19,56 +19,53 @@ The TestRail MCP Server acts as a bridge between AI assistants (like Cursor) and
 
 ```mermaid
 flowchart TB
-    subgraph UserLayer["User Layer"]
-        User[/"Developer"/]
+    subgraph IDE["Cursor IDE"]
+        UP[User Prompt]
+        LLM[Claude LLM]
+        UP --> LLM
     end
 
-    subgraph IDELayer["IDE Layer"]
-        Cursor["Cursor IDE"]
-        Claude["Claude LLM<br/>(Anthropic Cloud)"]
-    end
-
-    subgraph MCPLayer["MCP Server Layer (Local)"]
+    subgraph MCP["MCP Server - Local Machine"]
         direction TB
-        Transport["STDIO Transport"]
-        ToolRegistry["Tool Registry"]
+        STDIO[STDIO Transport]
+        McpExposed[McpExposedTools]
+        Lucene[LuceneToolIndexService]
+        Registry[InternalToolRegistry]
 
-        subgraph ToolsGroup["MCP Tools"]
-            CT["Cases Tools"]
-            PT["Projects Tools"]
-            RT["Runs Tools"]
-            RST["Results Tools"]
-            ST["Sections Tools"]
+        subgraph Tools["Internal Tools (101)"]
+            CT[Cases Tools]
+            PT[Projects Tools]
+            RT[Runs Tools]
+            RST[Results Tools]
+            ST[Sections Tools]
         end
 
-        ApiClient["TestRail API Client"]
+        TC[TestRail API Client]
+
+        STDIO --> McpExposed
+        McpExposed --> Lucene
+        McpExposed --> Registry
+        Registry --> Tools
+        Tools --> TC
     end
 
-    subgraph ConfigLayer["Configuration Layer"]
-        EnvVars["Environment Variables"]
-        AppConfig["application.yml"]
+    subgraph Config["Local Configuration"]
+        ENV[Environment Variables]
+        CREDS["TESTRAIL_URL<br/>TESTRAIL_USERNAME<br/>TESTRAIL_API_KEY"]
+        ENV --> CREDS
     end
 
-    subgraph ExternalLayer["External Services"]
-        TestRail["TestRail Instance<br/>(Cloud/On-Premise)"]
+    subgraph TR["TestRail Instance"]
+        API[TestRail API v2]
     end
 
-    User --> Cursor
-    Cursor <--> Claude
-    Claude <-->|"MCP Protocol<br/>(JSON-RPC over STDIO)"| Transport
-    Transport --> ToolRegistry
-    ToolRegistry --> ToolsGroup
-    ToolsGroup --> ApiClient
+    LLM <-->|MCP Protocol| STDIO
+    TC <-->|HTTPS + Basic Auth| API
+    CREDS -.->|Loaded at startup| TC
 
-    EnvVars --> AppConfig
-    AppConfig -.->|"Credentials"| ApiClient
-
-    ApiClient <-->|"HTTPS<br/>Basic Auth"| TestRail
-
-    style Claude fill:#a29bfe,color:#fff
-    style TestRail fill:#74b9ff,color:#fff
-    style EnvVars fill:#ff7675,color:#fff
-    style ApiClient fill:#00b894,color:#fff
+    style CREDS fill:#ff6b6b,color:#fff
+    style LLM fill:#a29bfe,color:#fff
+    style API fill:#74b9ff,color:#fff
 ```
 
 ---
