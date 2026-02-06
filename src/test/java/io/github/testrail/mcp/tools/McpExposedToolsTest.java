@@ -282,7 +282,182 @@ class McpExposedToolsTest {
         }
     }
 
-    // ── Tests: executeTool ──────────────────────────────────────────────────
+    // ── Tests: getCategories ────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("getCategories")
+    class GetCategoriesTests {
+
+        @Test
+        @DisplayName("Should return all categories with tool counts")
+        void shouldReturnAllCategoriesWithCounts() throws Exception {
+            String result = mcpExposedTools.getCategories();
+
+            Map<String, Object> response = objectMapper.readValue(result, Map.class);
+            assertThat(response.get("totalCategories")).isEqualTo(2); // math, strings
+            assertThat(response.get("totalTools")).isEqualTo(4); // add_numbers, divide_numbers, greet, format_message
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> categories = (List<Map<String, Object>>) response.get("categories");
+            assertThat(categories).hasSize(2);
+
+            // Categories should be sorted alphabetically
+            assertThat(categories.get(0).get("name")).isEqualTo("math");
+            assertThat(categories.get(0).get("toolCount")).isEqualTo(2);
+            assertThat(categories.get(1).get("name")).isEqualTo("strings");
+            assertThat(categories.get(1).get("toolCount")).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("Should return categories from multiple bean types")
+        void shouldReturnCategoriesFromMultipleBeans() throws Exception {
+            setupWithBeans(new MathToolBean(), new StringToolBean(), new MapToolBean());
+
+            String result = mcpExposedTools.getCategories();
+
+            Map<String, Object> response = objectMapper.readValue(result, Map.class);
+            assertThat(response.get("totalCategories")).isEqualTo(3); // math, strings, data
+            assertThat(response.get("totalTools")).isEqualTo(5);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> categories = (List<Map<String, Object>>) response.get("categories");
+            assertThat(categories).hasSize(3);
+
+            // Sorted: data, math, strings
+            assertThat(categories.get(0).get("name")).isEqualTo("data");
+            assertThat(categories.get(0).get("toolCount")).isEqualTo(1);
+            assertThat(categories.get(1).get("name")).isEqualTo("math");
+            assertThat(categories.get(1).get("toolCount")).isEqualTo(2);
+            assertThat(categories.get(2).get("name")).isEqualTo("strings");
+            assertThat(categories.get(2).get("toolCount")).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("Should return empty categories when no tools registered")
+        void shouldReturnEmptyWhenNoTools() throws Exception {
+            // Setup with no beans
+            when(applicationContext.getBeanDefinitionNames()).thenReturn(new String[0]);
+            toolRegistry = new InternalToolRegistry(applicationContext);
+            toolRegistry.init();
+            luceneToolIndexService = new LuceneToolIndexService(toolRegistry);
+            luceneToolIndexService.init();
+            mcpExposedTools = new McpExposedTools(toolRegistry, luceneToolIndexService, objectMapper);
+
+            String result = mcpExposedTools.getCategories();
+
+            Map<String, Object> response = objectMapper.readValue(result, Map.class);
+            assertThat(response.get("totalCategories")).isEqualTo(0);
+            assertThat(response.get("totalTools")).isEqualTo(0);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> categories = (List<Map<String, Object>>) response.get("categories");
+            assertThat(categories).isEmpty();
+        }
+    }
+
+    // ── Tests: getToolsByCategory ───────────────────────────────────────────
+
+    @Nested
+    @DisplayName("getToolsByCategory")
+    class GetToolsByCategoryTests {
+
+        @Test
+        @DisplayName("Should return all tools in a valid category with full details")
+        void shouldReturnToolsInCategory() throws Exception {
+            String result = mcpExposedTools.getToolsByCategory("math");
+
+            Map<String, Object> response = objectMapper.readValue(result, Map.class);
+            assertThat(response.get("category")).isEqualTo("math");
+            assertThat(response.get("toolCount")).isEqualTo(2);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> tools = (List<Map<String, Object>>) response.get("tools");
+            assertThat(tools).hasSize(2);
+
+            // Tools should be sorted alphabetically by name
+            assertThat(tools.get(0).get("name")).isEqualTo("add_numbers");
+            assertThat(tools.get(1).get("name")).isEqualTo("divide_numbers");
+
+            // Each tool should have full details
+            Map<String, Object> addTool = tools.get(0);
+            assertThat(addTool).containsKey("name");
+            assertThat(addTool).containsKey("description");
+            assertThat(addTool).containsKey("category");
+            assertThat(addTool).containsKey("keywords");
+            assertThat(addTool).containsKey("examples");
+            assertThat(addTool).containsKey("parameters");
+        }
+
+        @Test
+        @DisplayName("Should return full parameter details for tools in category")
+        void shouldReturnFullParameterDetails() throws Exception {
+            String result = mcpExposedTools.getToolsByCategory("math");
+
+            Map<String, Object> response = objectMapper.readValue(result, Map.class);
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> tools = (List<Map<String, Object>>) response.get("tools");
+
+            // Check add_numbers parameters
+            Map<String, Object> addTool = tools.get(0);
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> params = (List<Map<String, Object>>) addTool.get("parameters");
+            assertThat(params).hasSize(2);
+            assertThat(params.get(0).get("name")).isEqualTo("a");
+            assertThat(params.get(0).get("type")).isEqualTo("int");
+            assertThat(params.get(0).get("description")).isEqualTo("First number");
+            assertThat(params.get(0).get("required")).isEqualTo(true);
+        }
+
+        @Test
+        @DisplayName("Should return error for invalid category with valid category list")
+        void shouldReturnErrorForInvalidCategory() throws Exception {
+            String result = mcpExposedTools.getToolsByCategory("nonexistent");
+
+            Map<String, Object> response = objectMapper.readValue(result, Map.class);
+            assertThat(response.get("error")).isEqualTo("Category not found: nonexistent");
+
+            @SuppressWarnings("unchecked")
+            List<String> validCategories = (List<String>) response.get("validCategories");
+            assertThat(validCategories).containsExactly("math", "strings");
+        }
+
+        @Test
+        @DisplayName("Should return error for null category")
+        void shouldReturnErrorForNullCategory() throws Exception {
+            String result = mcpExposedTools.getToolsByCategory(null);
+
+            Map<String, Object> response = objectMapper.readValue(result, Map.class);
+            assertThat(response).containsKey("error");
+        }
+
+        @Test
+        @DisplayName("Should return error for blank category")
+        void shouldReturnErrorForBlankCategory() throws Exception {
+            String result = mcpExposedTools.getToolsByCategory("   ");
+
+            Map<String, Object> response = objectMapper.readValue(result, Map.class);
+            assertThat(response).containsKey("error");
+        }
+
+        @Test
+        @DisplayName("Should return tools from single-tool category")
+        void shouldReturnSingleToolCategory() throws Exception {
+            setupWithBeans(new MathToolBean(), new StringToolBean(), new MapToolBean());
+
+            String result = mcpExposedTools.getToolsByCategory("data");
+
+            Map<String, Object> response = objectMapper.readValue(result, Map.class);
+            assertThat(response.get("category")).isEqualTo("data");
+            assertThat(response.get("toolCount")).isEqualTo(1);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> tools = (List<Map<String, Object>>) response.get("tools");
+            assertThat(tools).hasSize(1);
+            assertThat(tools.get(0).get("name")).isEqualTo("process_data");
+        }
+    }
+
+    // ── Tests: Integration ──────────────────────────────────────────────────
 
     @Nested
     @DisplayName("executeTool")
@@ -883,6 +1058,31 @@ class McpExposedToolsTest {
             Map<String, Object> execResponse = objectMapper.readValue(execResult, Map.class);
             assertThat(execResponse.get("success")).isEqualTo(true);
             assertThat(execResponse.get("result")).isEqualTo(30);
+        }
+
+        @Test
+        @DisplayName("Should support category browse → execute flow")
+        void shouldSupportCategoryBrowseExecuteFlow() throws Exception {
+            // Step 1: Get categories
+            String catResult = mcpExposedTools.getCategories();
+            Map<String, Object> catResponse = objectMapper.readValue(catResult, Map.class);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> categories = (List<Map<String, Object>>) catResponse.get("categories");
+            assertThat(categories).isNotEmpty();
+
+            // Step 2: Get tools in the first category
+            String categoryName = (String) categories.get(0).get("name");
+            String toolsResult = mcpExposedTools.getToolsByCategory(categoryName);
+            Map<String, Object> toolsResponse = objectMapper.readValue(toolsResult, Map.class);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> tools = (List<Map<String, Object>>) toolsResponse.get("tools");
+            assertThat(tools).isNotEmpty();
+
+            // Step 3: Execute the first tool
+            String toolName = (String) tools.get(0).get("name");
+            assertThat(toolName).isNotBlank();
         }
     }
 }

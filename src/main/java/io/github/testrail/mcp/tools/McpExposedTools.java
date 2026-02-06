@@ -13,21 +13,20 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * The only two tools exposed to MCP clients via Spring AI's {@code @Tool} auto-discovery.
+ * The four tools exposed to MCP clients via Spring AI's {@code @Tool} auto-discovery.
  *
- * <p>All 101 internal TestRail tools are hidden behind these two gateway methods:
+ * <p>All 101 internal TestRail tools are hidden behind these gateway methods:
  * <ul>
- *   <li>{@link #searchTools(String)} — searches the Lucene index and returns full tool
- *       details (name, description, category, keywords, examples, parameters) from the
- *       {@link InternalToolRegistry}.</li>
- *   <li>{@link #executeTool(String, Map)} — looks up a tool by name in the registry,
- *       converts the parameter map to the correct Java types, and invokes the tool method
- *       via reflection.</li>
+ *   <li>{@link #searchTools(String)} — semantic search via Lucene index, returns full tool details.</li>
+ *   <li>{@link #getCategories()} — lists all tool categories with tool counts.</li>
+ *   <li>{@link #getToolsByCategory(String)} — lists all tools in a specific category with full details.</li>
+ *   <li>{@link #executeTool(String, Map)} — executes a specific tool by name with parameters.</li>
  * </ul>
  *
- * <p>Spring AI's MCP server auto-configuration discovers these two {@code @Tool} methods
+ * <p>Spring AI's MCP server auto-configuration discovers these {@code @Tool} methods
  * and exposes them as MCP tool callbacks. The internal tools annotated with
  * {@code @InternalTool} are invisible to Spring AI and only accessible through this class.</p>
  */
@@ -48,16 +47,16 @@ public class McpExposedTools {
         this.objectMapper = objectMapper;
     }
 
+    // ── Discovery: Semantic Search ─────────────────────────────────────────
+
     /**
      * Searches for TestRail tools matching the given natural language query.
      * Returns full details for each matching tool including name, description,
      * category, keywords, examples, and parameter specifications.
-     *
-     * <p>Use the returned tool name and parameter details to call {@link #executeTool}.</p>
      */
     @Tool(name = "search_tools", description = """
             Searches for available TestRail tools matching a natural language query.
-            Returns a ranked list of matching tools with full details including:
+            Returns a ranked list (max 20) of matching tools with full details including:
             - name: the tool identifier to use with execute_tool
             - description: what the tool does and when to use it
             - category: the tool's functional category
@@ -65,8 +64,9 @@ public class McpExposedTools {
             - examples: usage examples showing how to call via execute_tool
             - parameters: full parameter specifications (name, type, description, required, defaultValue)
             
-            Use this tool first to discover which TestRail tools are available for your task,
-            then use execute_tool with the returned tool name and parameters.
+            Use this for fuzzy or natural language queries like 'clone a test case' or 'add test result'.
+            Alternatively, use get_categories() and get_tools_by_category() for structured browsing.
+            After discovering the right tool, use execute_tool to run it.
             """)
     public String searchTools(
             @ToolParam(description = "Natural language search query describing what you want to do. Examples: 'add test result', 'get test cases for project', 'create milestone'")
@@ -99,24 +99,113 @@ public class McpExposedTools {
         return toJson(response);
     }
 
+    // ── Discovery: Category Browsing ───────────────────────────────────────
+
+    /**
+     * Returns all tool categories with the number of tools in each category.
+     */
+    @Tool(name = "get_categories", description = """
+            Returns all available tool categories with the number of tools in each.
+            Use this to explore what the TestRail MCP server can do, then call
+            get_tools_by_category() to see the tools in a specific category.
+            
+            Example response:
+            {"categories": [{"name": "test-cases", "toolCount": 6}, {"name": "test-runs", "toolCount": 6}, ...]}
+            
+            Alternatively, use search_tools() for natural language discovery.
+            """)
+    public String getCategories() {
+        log.info("get_categories called");
+
+        Map<String, List<InternalToolRegistry.ToolDefinition>> grouped = groupToolsByCategory();
+
+        List<Map<String, Object>> categories = grouped.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> {
+                    Map<String, Object> cat = new LinkedHashMap<>();
+                    cat.put("name", entry.getKey());
+                    cat.put("toolCount", entry.getValue().size());
+                    return cat;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("totalCategories", categories.size());
+        response.put("totalTools", toolRegistry.getToolNames().size());
+        response.put("categories", categories);
+
+        return toJson(response);
+    }
+
+    /**
+     * Returns all tools in a specific category with full details.
+     */
+    @Tool(name = "get_tools_by_category", description = """
+            Returns all tools in a specific category with full details including:
+            - name: the tool identifier to use with execute_tool
+            - description: what the tool does
+            - keywords: related search terms
+            - examples: usage examples
+            - parameters: full parameter specifications (name, type, description, required, defaultValue)
+            
+            Use get_categories() first to see available categories, then call this tool
+            with a category name. After finding the right tool, use execute_tool to run it.
+            
+            Alternatively, use search_tools() for natural language discovery.
+            """)
+    public String getToolsByCategory(
+            @ToolParam(description = "The category name exactly as returned by get_categories (e.g., 'test-cases', 'test-runs', 'projects')")
+            String category
+    ) {
+        log.info("get_tools_by_category called with category='{}'", category);
+
+        if (category == null || category.isBlank()) {
+            return toJson(Map.of("error", "Category must not be empty"));
+        }
+
+        Map<String, List<InternalToolRegistry.ToolDefinition>> grouped = groupToolsByCategory();
+
+        List<InternalToolRegistry.ToolDefinition> toolsInCategory = grouped.get(category);
+
+        if (toolsInCategory == null) {
+            List<String> validCategories = grouped.keySet().stream().sorted().collect(Collectors.toList());
+            return toJson(Map.of(
+                    "error", "Category not found: " + category,
+                    "validCategories", validCategories
+            ));
+        }
+
+        List<Map<String, Object>> toolDetailsList = toolsInCategory.stream()
+                .sorted(Comparator.comparing(InternalToolRegistry.ToolDefinition::getName))
+                .map(InternalToolRegistry.ToolDefinition::toFullDetails)
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("category", category);
+        response.put("toolCount", toolDetailsList.size());
+        response.put("tools", toolDetailsList);
+
+        return toJson(response);
+    }
+
+    // ── Execution ──────────────────────────────────────────────────────────
+
     /**
      * Executes a TestRail tool by name with the provided parameters.
-     *
-     * <p>Use {@link #searchTools} first to discover available tools and their parameter
-     * specifications, then call this method with the tool name and a flat parameter map.</p>
      */
     @Tool(name = "execute_tool", description = """
             Executes a specific TestRail tool by name with the provided parameters.
-            Use search_tools first to find the tool name and required parameters.
+            Use search_tools, get_categories + get_tools_by_category to discover tool names
+            and their required parameters before calling this tool.
             
             Parameters should be provided as a flat key-value map matching the parameter
-            names returned by search_tools. For example:
+            names returned by the discovery tools. For example:
             - execute_tool(toolName: "get_case", parameters: {"caseId": 123})
             - execute_tool(toolName: "add_result", parameters: {"testId": 5, "statusId": 1, "comment": "Passed"})
             - execute_tool(toolName: "get_cases", parameters: {"projectId": 1, "suiteId": 5})
             """)
     public String executeTool(
-            @ToolParam(description = "The exact tool name as returned by search_tools (e.g., 'get_case', 'add_result')")
+            @ToolParam(description = "The exact tool name as returned by search_tools or get_tools_by_category (e.g., 'get_case', 'add_result')")
             String toolName,
             @ToolParam(description = "A flat key-value map of parameters for the tool. Keys are parameter names, values are the parameter values.")
             Map<String, Object> parameters
@@ -131,7 +220,7 @@ public class McpExposedTools {
         if (toolDef == null) {
             return toJson(Map.of(
                     "error", "Tool not found: " + toolName,
-                    "suggestion", "Use search_tools to find available tools"
+                    "suggestion", "Use search_tools or get_tools_by_category to find available tools"
             ));
         }
 
@@ -170,6 +259,14 @@ public class McpExposedTools {
     }
 
     // ── Internal helpers ────────────────────────────────────────────────────
+
+    /**
+     * Groups all tools from the registry by their category.
+     */
+    Map<String, List<InternalToolRegistry.ToolDefinition>> groupToolsByCategory() {
+        return toolRegistry.getAllTools().stream()
+                .collect(Collectors.groupingBy(InternalToolRegistry.ToolDefinition::getCategory));
+    }
 
     /**
      * Builds the method argument array by mapping the flat parameter map to the
