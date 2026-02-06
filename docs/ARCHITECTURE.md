@@ -28,7 +28,7 @@ flowchart TB
     subgraph MCP["MCP Server - Local Machine"]
         direction TB
         STDIO[STDIO Transport]
-        McpExposed[McpExposedTools]
+        McpExposed[4-Tool Gateway]
         Lucene[LuceneToolIndexService]
         Registry[InternalToolRegistry]
 
@@ -70,6 +70,77 @@ flowchart TB
 
 ---
 
+## Tool Discovery and Execution
+
+The server does **not** expose all 101 internal tools directly to the MCP client. Doing so would consume a massive number of tokens in the LLM's context window, making it inefficient and expensive. Instead, it exposes a **4-tool gateway** that provides two distinct paths for discovering the internal tools:
+
+1.  **Search Path**: A natural language, fuzzy-search endpoint (`search_tools`).
+2.  **Browse Path**: A structured, categorical browsing endpoint (`get_categories` and `get_tools_by_category`).
+
+Once a tool is discovered, the `execute_tool` endpoint is used to run it.
+
+```mermaid
+flowchart TD
+    subgraph Client["MCP Client (LLM)"]
+        direction LR
+        Start((Start))
+        Search[search_tools(query)]
+        BrowseCat[get_categories()]
+        BrowseTools[get_tools_by_category(category)]
+    end
+
+    subgraph Server["MCP Server"]
+        direction TB
+        subgraph Gateway["4-Tool Gateway"]
+            G_Search[search_tools]
+            G_BrowseCat[get_categories]
+            G_BrowseTools[get_tools_by_category]
+            G_Execute[execute_tool]
+        end
+        subgraph Discovery["Discovery Services"]
+            Lucene[LuceneToolIndexService]
+            Registry[InternalToolRegistry]
+        end
+        subgraph InternalTools["Internal Tools (101)"]
+            GetCase[get_case]
+            AddRun[add_run]
+            UpdateProject[update_project]
+        end
+    end
+
+    Start --> Search
+    Start --> BrowseCat
+    
+    Search --> G_Search
+    BrowseCat --> G_BrowseCat
+    BrowseTools --> G_BrowseTools
+
+    G_Search --> Lucene
+    G_BrowseCat --> Registry
+    G_BrowseTools --> Registry
+    
+    subgraph Results
+        direction TB
+        ToolList[Tool List + Details]
+    end
+
+    Lucene --> ToolList
+    Registry --> ToolList
+
+    subgraph Execution
+        Execute[execute_tool(toolName, params)] --> G_Execute
+        G_Execute -- Invokes by name via reflection --> InternalTools
+    end
+
+    ToolList --> Execute
+
+    style Gateway fill:#a29bfe,color:#fff
+    style Discovery fill:#74b9ff,color:#fff
+    style InternalTools fill:#55efc4,color:#fff
+```
+
+---
+
 ## Component Architecture
 
 ### Layer Diagram
@@ -77,11 +148,11 @@ flowchart TB
 ```mermaid
 flowchart TB
     subgraph Presentation["Presentation Layer"]
-        MCP["MCP Server<br/>(STDIO Transport)"]
+        MCP["4-Tool Gateway<br/>(McpExposedTools)"]
     end
 
     subgraph Application["Application Layer"]
-        subgraph Tools["Tool Components"]
+        subgraph Tools["Internal Tool Components (101)"]
             direction LR
             CasesTools["CasesTools"]
             ProjectsTools["ProjectsTools"]
@@ -112,7 +183,8 @@ flowchart TB
         TestRailAPI["TestRail API v2"]
     end
 
-    MCP --> Tools
+    MCP --> DiscoveryServices[Discovery Services]
+        DiscoveryServices --> Tools
     Tools --> Models
     Tools --> ApiClient
     ApiClient --> WebClient
@@ -129,42 +201,33 @@ flowchart TB
 
 ```mermaid
 sequenceDiagram
-    box Local Machine
-        participant STDIO as STDIO Transport
-        participant Tool as Tool Component
-        participant Client as TestrailApiClient
-        participant WC as WebClient
-    end
+    participant C as MCP Client (LLM)
+    participant S as MCP Server (Gateway)
+    participant D as Discovery Services
+    participant I as Internal Tool
+    participant T as TestRail API
 
-    box External
-        participant TR as TestRail API
-    end
+    C->>S: tools/call(search_tools, {query: "..."})
+    activate S
+    S->>D: search("...")
+    activate D
+    D-->>S: List<ToolDefinition>
+    deactivate D
+    S-->>C: JSON result with tool details
+    deactivate S
 
-    STDIO->>Tool: Tool invocation (JSON-RPC)
-    activate Tool
-
-    Tool->>Tool: Validate parameters
-    Tool->>Client: Call API method
-    activate Client
-
-    Client->>Client: Build request
-    Client->>WC: HTTP request
-    activate WC
-
-    WC->>TR: HTTPS + Basic Auth
-    activate TR
-    TR-->>WC: JSON Response
-    deactivate TR
-
-    WC-->>Client: Response body
-    deactivate WC
-
-    Client->>Client: Parse response
-    Client-->>Tool: Domain object
-    deactivate Client
-
-    Tool-->>STDIO: Tool result (JSON)
-    deactivate Tool
+    C->>S: tools/call(execute_tool, {toolName: "get_case", ...})
+    activate S
+    S->>I: getCase(1)
+    activate I
+    I->>T: GET /index.php?/api/v2/get_case/1
+    activate T
+    T-->>I: Test Case JSON
+    deactivate T
+    I-->>S: TestCase object
+    deactivate I
+    S-->>C: JSON result
+    deactivate S
 ```
 
 ---
@@ -389,6 +452,13 @@ classDiagram
 
 ```mermaid
 classDiagram
+    class McpExposedTools {
+        +search_tools(String): String
+        +get_categories(): String
+        +get_tools_by_category(String): String
+        +execute_tool(String, String): String
+    }
+
     class CasesTools {
         -TestrailApiClient apiClient
         +getTestCase(Integer) TestCase

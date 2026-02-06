@@ -4,14 +4,19 @@ This document provides a complete reference for all 101 internal tools available
 
 ## Tool Discovery and Execution
 
-The TestRail MCP Server exposes only two tools to the LLM:
+The TestRail MCP Server exposes a 4-tool gateway to the LLM, providing two distinct paths for discovering the 101 internal tools:
 
-1.  `search_tools(query: string)`: Searches the 101 internal tools and returns the top 20 most relevant tools with their full descriptions, parameters, and examples.
-2.  `execute_tool(toolName: string, parameters: map)`: Executes a specific internal tool by name with the provided parameters.
+-   **Search Path**
+    -   `search_tools(query: string)`: Fuzzy-searches all 101 internal tools and returns a ranked list of matches.
+-   **Browse Path**
+    -   `get_categories()`: Returns a list of all 19 tool categories (e.g., `test-cases`, `projects`).
+    -   `get_tools_by_category(category: string)`: Returns all tools in a specific category.
+-   **Execution**
+    -   `execute_tool(toolName: string, parameters: map)`: Executes a specific internal tool by name.
 
-This architecture allows the LLM to discover the right tool for the job without being overwhelmed by the full list of 101 tools.
+This architecture allows the LLM to discover the right tool for the job without being overwhelmed by the full list of 101 tools, supporting both directed searching and open-ended exploration.
 
-### Tool Discovery Flow
+### Search-Based Discovery Flow
 
 ```mermaid
 sequenceDiagram
@@ -29,6 +34,27 @@ sequenceDiagram
     MCP->>Registry: getTool("get_case")
     Registry-->>MCP: ToolDefinition for get_case
     MCP-->>LLM: [Full details for copy_cases_to_section, get_case, ...]
+```
+
+### Browse-Based Discovery Flow
+
+```mermaid
+sequenceDiagram
+    participant LLM
+    participant MCP as MCP Server
+    participant Registry as InternalToolRegistry
+
+    LLM->>MCP: get_categories()
+    MCP->>Registry: getToolNames()
+    Registry-->>MCP: List of all tool definitions
+    MCP->>MCP: Group tools by category
+    MCP-->>LLM: [{"name": "test-cases", "toolCount": 6}, ...]
+
+    LLM->>MCP: get_tools_by_category("test-cases")
+    MCP->>Registry: getToolNames()
+    Registry-->>MCP: List of all tool definitions
+    MCP->>MCP: Filter tools for category "test-cases"
+    MCP-->>LLM: [Full details for get_case, add_case, ...]
 ```
 
 ### Tool Execution Flow

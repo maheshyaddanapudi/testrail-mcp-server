@@ -32,7 +32,8 @@ For detailed documentation with comprehensive Mermaid diagrams, see the `docs/` 
 
 ## Features
 
-- **101 TestRail Tools**: Complete coverage of TestRail API operations.
+- **101 TestRail Tools**: Complete coverage of TestRail API operations, accessible via a 4-tool gateway.
+- **Dual Discovery Paths**: Find tools via natural language search (`search_tools`) or by browsing a structured catalog (`get_categories`, `get_tools_by_category`).
 - **Searchable Tools**: A powerful `search_tools` method allows the LLM to find the right tool for the job using natural language.
 - **Secure by Design**: API credentials never leave your local machine.
 - **Permission Control**: Cursor asks for confirmation before executing each tool.
@@ -54,7 +55,7 @@ flowchart TB
     subgraph MCP["MCP Server - Local Machine"]
         direction TB
         STDIO[STDIO Transport]
-        McpExposed[McpExposedTools]
+        McpExposed[4-Tool Gateway]
         Lucene[LuceneToolIndexService]
         Registry[InternalToolRegistry]
 
@@ -118,7 +119,7 @@ flowchart LR
         end
 
         subgraph McpLayer["MCP Gateway"]
-            McpExposed[McpExposedTools]
+            McpExposed[4-Tool Gateway]
         end
 
         subgraph ToolsLayer["Internal Tools Layer (101)"]
@@ -143,7 +144,7 @@ flowchart LR
 
 ## Security
 
-Your TestRail credentials **never leave your local machine** and are **never sent to the LLM**. The architecture is designed to expose only a `search_tools` and `execute_tool` gateway to the LLM, keeping the internal tool implementations and your credentials secure.
+Your TestRail credentials **never leave your local machine** and are **never sent to the LLM**. The architecture is designed to expose only a 4-tool gateway to the LLM, keeping the 101 internal tool implementations and your credentials secure.
 
 ## Prerequisites
 
@@ -201,14 +202,21 @@ Create or edit `~/.cursor/mcp.json`:
 }
 ```
 
-## Available Tools
+## The 4-Tool Gateway
 
-This server exposes two primary tools to the LLM:
+This server exposes a 4-tool gateway to the LLM, providing two discovery paths to the 101 internal tools:
 
--   `search_tools(query: string)`: Searches the 101 available internal tools and returns a ranked list of matches with full details.
--   `execute_tool(toolName: string, parameters: map)`: Executes a specific internal tool by name.
+-   **Search Path**
+    -   `search_tools(query: string)`: Fuzzy-searches all 101 internal tools and returns a ranked list of matches.
+-   **Browse Path**
+    -   `get_categories()`: Returns a list of all 19 tool categories (e.g., `test-cases`, `projects`).
+    -   `get_tools_by_category(category: string)`: Returns all tools in a specific category.
+-   **Execution**
+    -   `execute_tool(toolName: string, parameters: map)`: Executes a specific internal tool by name.
 
 ## Example Use Cases
+
+### Search-Based Discovery
 
 **User:** "Find all test cases in the 'User Authentication' suite of the 'Mobile App' project."
 
@@ -217,6 +225,16 @@ This server exposes two primary tools to the LLM:
 3.  **LLM calls `execute_tool("get_project_by_name", {name: "Mobile App"})`** to get the project ID.
 4.  **LLM calls `execute_tool("get_suite_by_name", {projectId: 1, name: "User Authentication"})`** to get the suite ID.
 5.  **LLM calls `execute_tool("get_cases", {projectId: 1, suiteId: 5})`** to get the test cases.
+
+### Browse-Based Discovery
+
+**User:** "I need to manage test runs. What can I do?"
+
+1.  **LLM calls `get_categories()`** to see what's available.
+2.  Server returns a list of categories, including `test-runs`.
+3.  **LLM calls `get_tools_by_category("test-runs")`** to see the tools in that category.
+4.  Server returns `get_run`, `get_runs`, `add_run`, `update_run`, `close_run`, `delete_run`.
+5.  **LLM calls `execute_tool("get_runs", {projectId: 1})`** to get all test runs for a project.
 
 ## Development
 
