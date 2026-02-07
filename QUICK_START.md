@@ -1,4 +1,4 @@
-'''
+
 # TestRail MCP Server - Quick Start Guide
 
 This guide provides step-by-step instructions to get the TestRail MCP Server up and running in your local environment and integrated with Cursor.
@@ -113,12 +113,29 @@ Once Cursor has restarted, you can verify that the TestRail MCP server is runnin
 
 > **"Hey @testrail, what tools do you have?"**
 
-Cursor should respond with a list of available TestRail tools, such as:
-- `get_projects`
-- `get_runs`
-- `get_cases`
-- `add_case`
-- ...and many more.
+Cursor should first respond with the four main gateway tools:
+
+- `search_tools`
+- `get_categories`
+- `get_tools_by_category`
+- `execute_tool`
+
+This confirms the gateway is working. Now, you can test the discovery features. For example:
+
+> **"OK, @testrail, what tool categories are there?"**
+
+Cursor should now use the `get_categories` tool and respond with a list of available categories, such as:
+- `attachments`
+- `test-cases`
+- `projects`
+- `test-runs`
+- ...and 15 more.
+
+Alternatively, you can use search:
+
+> **"@testrail, search for tools to 'add a new test case'"**
+
+Cursor will use the `search_tools` function and likely return the `add_case` tool as the top result.
 
 If you see this list, your TestRail MCP server is successfully integrated! 🎉
 
@@ -130,4 +147,4 @@ If you see this list, your TestRail MCP server is successfully integrated! 🎉
 - **Authentication errors**: Verify that your `TESTRAIL_URL`, `TESTRAIL_USERNAME`, and `TESTRAIL_API_KEY` are correct.
 - **No response from `@testrail`**: Ensure you have restarted Cursor after configuring `mcp.json`.
 - **Build failures**: Make sure you have JDK 17+ installed and that you are in the project's root directory when running the build command.
-'''
+
