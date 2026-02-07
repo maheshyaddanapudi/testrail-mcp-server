@@ -105,39 +105,50 @@ For the MCP server configuration to take effect, you must **fully quit and resta
 
 ## 7. Verify the Integration
 
-Once Cursor has restarted, you can verify that the TestRail MCP server is running and integrated correctly.
+Once Cursor has restarted, you can verify the integration by having a conversation with `@testrail`. Here are two example flows, one for browsing and one for searching.
 
-1. Open a new chat in Cursor.
-2. Type `@testrail` to ensure the tool is recognized.
-3. Ask a question to invoke one of the tools:
+### Example 1: Browse-Based Discovery
 
-> **"Hey @testrail, what tools do you have?"**
+This path is useful when you want to explore the available capabilities.
 
-Cursor should first respond with the four main gateway tools:
+1.  **Start the conversation and see the gateway tools.**
+    > **You:** `@testrail what can you do?`
+    > 
+    > **Cursor:** _(Responds with the 4 gateway tools: `search_tools`, `get_categories`, `get_tools_by_category`, `execute_tool`)_
 
-- `search_tools`
-- `get_categories`
-- `get_tools_by_category`
-- `execute_tool`
+2.  **Discover the tool categories.**
+    > **You:** `Okay, what are the categories?`
+    > 
+    > **Cursor:** _(Uses `get_categories` and lists all 19, including `projects`, `test-runs`, `test-cases`, etc.)_
 
-This confirms the gateway is working. Now, you can test the discovery features. For example:
+3.  **Explore a specific category.**
+    > **You:** `Interesting. What can I do with test runs?`
+    > 
+    > **Cursor:** _(Understands the intent, uses `get_tools_by_category` with `"test-runs"`, and lists the 6 tools for managing runs: `get_run`, `get_runs`, `add_run`, `update_run`, `close_run`, `delete_run`)_
 
-> **"OK, @testrail, what tool categories are there?"**
+4.  **Execute a tool using natural language.**
+    > **You:** `Get me all the test runs for the "Mobile App Q1" project.`
+    > 
+    > **Cursor:** _(Now knows the tools exist. It will first call `get_project_by_name` to find the ID for "Mobile App Q1", then call `get_runs` with that project ID, and finally present you with the list of test runs.)_
 
-Cursor should now use the `get_categories` tool and respond with a list of available categories, such as:
-- `attachments`
-- `test-cases`
-- `projects`
-- `test-runs`
-- ...and 15 more.
+### Example 2: Search-Based Discovery
 
-Alternatively, you can use search:
+This path is faster when you know what you want to do.
 
-> **"@testrail, search for tools to 'add a new test case'"**
+1.  **Search for a tool with a natural language query.**
+    > **You:** `@testrail I need to add a new test case with a "high" priority.`
+    > 
+    > **Cursor:** _(Uses `search_tools` with a query like "add new test case with priority". It will find the `add_case` tool and identify its parameters: `section_id`, `title`, `template_id`, `type_id`, `priority_id`, etc.)_
 
-Cursor will use the `search_tools` function and likely return the `add_case` tool as the top result.
+2.  **Provide the necessary information.**
+    > **Cursor:** `I can do that. What is the section ID for the new test case? What is its title?`
+    > 
+    > **You:** `Section is 42. Title is "Verify login with biometrics".`
 
-If you see this list, your TestRail MCP server is successfully integrated! 🎉
+3.  **Execute the tool.**
+    > **Cursor:** _(Now has enough information. It calls `execute_tool` with the name `add_case` and the parameters `{section_id: 42, title: "Verify login with biometrics", priority_id: 1}`. It then confirms the new test case was created.)_
+
+If you can complete these flows, your TestRail MCP server is successfully integrated! 🎉
 
 ---
 
