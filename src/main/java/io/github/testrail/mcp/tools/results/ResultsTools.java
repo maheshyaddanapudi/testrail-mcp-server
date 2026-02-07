@@ -223,6 +223,50 @@ public class ResultsTools {
     @InternalTool(
             name = "get_results_for_case",
             description = """
+                    Retrieves test results for a specific test case within a test run.
+                    Uses a run ID + case ID combination instead of a test ID.
+                    Returns the history of results for that case in the run with status, comments, and defects.
+                    
+                    **When to use:** Use this tool when you know the case ID and run ID but not the test ID,
+                    and want to see the result history for that case in a specific run.
+                    Filter by defect ID or status to narrow down results.
+                    
+                    **Might lead to:** add_result (to add a new result), get_results_for_run (for all run results),
+                    get_results (if you have the test ID instead).
+                    
+                    **Example prompts:**
+                    - "Show me the results for case C123 in run R456"
+                    - "Get failed results for case 789 in run 100"
+                    - "Show result history for case C50 in run R200"
+                    """,
+            category = "test-results",
+            examples = {
+                    "execute_tool('get_results_for_case', {runId: 456, caseId: 123})",
+                    "execute_tool('get_results_for_case', {runId: 789, caseId: 50, statusId: '5'})"
+            },
+            keywords = {"get", "retrieve", "fetch", "show", "view", "results", "case", "run", "history"}
+    )
+    public List<TestResult> getResultsForCase(
+            @InternalToolParam(description = "The ID of the test run")
+            Integer runId,
+            @InternalToolParam(description = "The ID of the test case")
+            Integer caseId,
+            @InternalToolParam(description = "Filter by a single Defect ID (e.g. TR-1, 4291, etc.)", required = false)
+            String defectsFilter,
+            @InternalToolParam(description = "Comma-separated list of status IDs to filter by (e.g. '1,5' for passed and failed)", required = false)
+            String statusId,
+            @InternalToolParam(description = "Maximum number of results to return (1-250)", required = false, defaultValue = "250")
+            Integer limit,
+            @InternalToolParam(description = "Number of results to skip for pagination", required = false, defaultValue = "0")
+            Integer offset
+    ) {
+        log.info("Tool: get_results_for_case called with runId={}, caseId={}", runId, caseId);
+        return apiClient.getResultsForCase(runId, caseId, defectsFilter, statusId, limit, offset);
+    }
+
+    @InternalTool(
+            name = "add_results_for_cases",
+            description = """
                     Adds test results for specific cases in a test run.
                     Uses case IDs instead of test IDs, which is useful when you know the case IDs but not the test IDs.
                     
@@ -237,8 +281,8 @@ public class ResultsTools {
                     """,
             category = "test-results",
             examples = {
-                    "execute_tool('get_results_for_case', {runId: 456, caseIds: '123', statusId: 1})",
-                    "execute_tool('get_results_for_case', {runId: 789, caseIds: '1,2,3', statusId: 1})"
+                    "execute_tool('add_results_for_cases', {runId: 456, caseIds: '123', statusId: 1})",
+                    "execute_tool('add_results_for_cases', {runId: 789, caseIds: '1,2,3', statusId: 1})"
             },
             keywords = {"add", "create", "results", "case", "cases", "import", "automation", "by-case"}
     )

@@ -56,22 +56,40 @@ class CasesToolsTest {
         TestCase case2 = new TestCase();
         case2.setId(2);
 
-        when(apiClient.getCases(1, 5, 10, 50, 0)).thenReturn(List.of(case1, case2));
+        when(apiClient.getCases(1, 5, 10, 50, 0, null, null, null, null, null, null, null, null, null, null))
+                .thenReturn(List.of(case1, case2));
 
-        List<TestCase> result = casesTools.getTestCases(1, 5, 10, 50, 0);
+        List<TestCase> result = casesTools.getTestCases(1, 5, 10, 50, 0,
+                null, null, null, null, null, null, null, null, null, null);
 
         assertThat(result).hasSize(2);
-        verify(apiClient).getCases(1, 5, 10, 50, 0);
+        verify(apiClient).getCases(1, 5, 10, 50, 0, null, null, null, null, null, null, null, null, null, null);
     }
 
     @Test
     void getTestCases_shouldHandleNullFilters() {
-        when(apiClient.getCases(1, null, null, null, null)).thenReturn(List.of());
+        when(apiClient.getCases(1, null, null, null, null, null, null, null, null, null, null, null, null, null, null))
+                .thenReturn(List.of());
 
-        List<TestCase> result = casesTools.getTestCases(1, null, null, null, null);
+        List<TestCase> result = casesTools.getTestCases(1, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null);
 
         assertThat(result).isEmpty();
-        verify(apiClient).getCases(1, null, null, null, null);
+        verify(apiClient).getCases(1, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    @Test
+    void getTestCases_shouldPassAdvancedFilters() {
+        when(apiClient.getCases(1, null, null, 100, 0, 1700000000L, 1700100000L, "1,2", "login",
+                5, "3,4", "1", null, null, null))
+                .thenReturn(List.of());
+
+        List<TestCase> result = casesTools.getTestCases(1, null, null, 100, 0,
+                1700000000L, 1700100000L, "1,2", "login", 5, "3,4", "1", null, null, null);
+
+        assertThat(result).isEmpty();
+        verify(apiClient).getCases(1, null, null, 100, 0, 1700000000L, 1700100000L, "1,2", "login",
+                5, "3,4", "1", null, null, null);
     }
 
     @Test
@@ -91,7 +109,10 @@ class CasesToolsTest {
                 "User logged in",
                 3,
                 1,
-                "JIRA-123"
+                "JIRA-123",
+                "1m 30s",
+                10,
+                2
         );
 
         assertThat(result.getId()).isEqualTo(456);
@@ -104,6 +125,9 @@ class CasesToolsTest {
         assertThat(capturedData.get("priority_id")).isEqualTo(3);
         assertThat(capturedData.get("type_id")).isEqualTo(1);
         assertThat(capturedData.get("refs")).isEqualTo("JIRA-123");
+        assertThat(capturedData.get("estimate")).isEqualTo("1m 30s");
+        assertThat(capturedData.get("milestone_id")).isEqualTo(10);
+        assertThat(capturedData.get("template_id")).isEqualTo(2);
     }
 
     @Test
@@ -114,7 +138,7 @@ class CasesToolsTest {
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.forClass(Map.class);
         when(apiClient.addCase(eq(1), dataCaptor.capture())).thenReturn(expected);
 
-        TestCase result = casesTools.addTestCase(1, "Minimal Test", null, null, null, null, null, null);
+        TestCase result = casesTools.addTestCase(1, "Minimal Test", null, null, null, null, null, null, null, null, null);
 
         assertThat(result.getId()).isEqualTo(789);
 
@@ -122,6 +146,9 @@ class CasesToolsTest {
         assertThat(capturedData.get("title")).isEqualTo("Minimal Test");
         assertThat(capturedData).doesNotContainKey("custom_steps");
         assertThat(capturedData).doesNotContainKey("custom_expected");
+        assertThat(capturedData).doesNotContainKey("estimate");
+        assertThat(capturedData).doesNotContainKey("milestone_id");
+        assertThat(capturedData).doesNotContainKey("template_id");
     }
 
     @Test
@@ -141,6 +168,9 @@ class CasesToolsTest {
                 null,
                 4,
                 null,
+                null,
+                "2h",
+                null,
                 null
         );
 
@@ -150,8 +180,11 @@ class CasesToolsTest {
         assertThat(capturedData.get("title")).isEqualTo("Updated Title");
         assertThat(capturedData.get("custom_expected")).isEqualTo("New expected result");
         assertThat(capturedData.get("priority_id")).isEqualTo(4);
+        assertThat(capturedData.get("estimate")).isEqualTo("2h");
         assertThat(capturedData).doesNotContainKey("custom_steps");
         assertThat(capturedData).doesNotContainKey("custom_preconds");
+        assertThat(capturedData).doesNotContainKey("milestone_id");
+        assertThat(capturedData).doesNotContainKey("template_id");
     }
 
     @Test
@@ -164,6 +197,18 @@ class CasesToolsTest {
         assertThat(result.getMessage()).contains("C123");
         assertThat(result.getMessage()).contains("deleted");
         verify(apiClient).deleteCase(123);
+    }
+
+    @Test
+    void copyCasesToSection_shouldCopyMultipleCases() {
+        doNothing().when(apiClient).copyCasesToSection(eq(10), anyList());
+
+        OperationResult result = casesTools.copyCasesToSection(10, "1,2,3");
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getMessage()).contains("3");
+        assertThat(result.getMessage()).contains("section 10");
+        verify(apiClient).copyCasesToSection(eq(10), eq(List.of(1, 2, 3)));
     }
 
     @Test

@@ -98,12 +98,10 @@ public class LabelsTools {
     @InternalTool(
             name = "update_label",
             description = """
-                    Updates an existing label's title.
+                    Updates an existing label's title within a project.
+                    Both project_id and title are required by the TestRail API.
                     Changes affect all test cases using this label - the label reference is updated everywhere.
                     Maximum 20 characters allowed for title.
-                    
-                    Updatable fields:
-                    - **title** (string): New label title (max 20 characters)
                     
                     **When to use:** Use this tool when you need to rename labels for clarity,
                     fix typos in label names, standardize label naming conventions,
@@ -112,24 +110,29 @@ public class LabelsTools {
                     **Might lead to:** get_label (to verify update), get_cases (to see affected test cases).
                     
                     **Example prompts:**
-                    - "Rename label 1 to 'Release 3.0'"
-                    - "Update label 'Critcal' to 'Critical'"
-                    - "Change label 5 title to 'High Priority'"
+                    - "Rename label 1 to 'Release 3.0' in project 5"
+                    - "Update label 'Critcal' to 'Critical' in project 1"
+                    - "Change label 5 title to 'High Priority' in project 3"
                     """,
             category = "labels",
             examples = {
-                    "execute_tool('update_label', {labelId: 1, label: {title: 'Release 3.0'}})",
-                    "execute_tool('update_label', {labelId: 5, label: {title: 'Critical'}})"
+                    "execute_tool('update_label', {labelId: 1, projectId: 5, title: 'Release 3.0'})",
+                    "execute_tool('update_label', {labelId: 5, projectId: 1, title: 'Critical'})"
             },
             keywords = {"update", "modify", "change", "edit", "rename", "label", "tag", "title"}
     )
     public Label updateLabel(
             @InternalToolParam(description = "The ID of the label to update")
             int labelId,
-            @InternalToolParam(description = "Label map with keys: title (required, max 20 characters)")
-            Map<String, Object> label
+            @InternalToolParam(description = "The ID of the project where the label is to be updated")
+            int projectId,
+            @InternalToolParam(description = "The new title for the label (max 20 characters)")
+            String title
     ) {
-        log.info("Updating label {}", labelId);
-        return apiClient.updateLabel(labelId, label);
+        log.info("Updating label {} in project {}", labelId, projectId);
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put("project_id", projectId);
+        data.put("title", title);
+        return apiClient.updateLabel(labelId, data);
     }
 }

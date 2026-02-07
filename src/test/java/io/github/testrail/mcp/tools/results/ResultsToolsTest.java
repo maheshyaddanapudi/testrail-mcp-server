@@ -169,4 +169,31 @@ class ResultsToolsTest {
         assertThat(capturedData.get(1).get("case_id")).isEqualTo(456);
         assertThat(capturedData.get(0).get("status_id")).isEqualTo(1);
     }
+
+    @Test
+    void getResultsForCase_shouldReturnResultsForRunAndCase() {
+        TestResult result1 = new TestResult();
+        result1.setId(800);
+        result1.setStatusId(5);
+
+        when(apiClient.getResultsForCase(100, 50, null, null, null, null))
+                .thenReturn(List.of(result1));
+
+        List<TestResult> results = resultsTools.getResultsForCase(100, 50, null, null, null, null);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getStatusId()).isEqualTo(5);
+        verify(apiClient).getResultsForCase(100, 50, null, null, null, null);
+    }
+
+    @Test
+    void getResultsForCase_shouldPassFilters() {
+        when(apiClient.getResultsForCase(100, 50, "BUG-1", "5", 10, 0))
+                .thenReturn(List.of());
+
+        List<TestResult> results = resultsTools.getResultsForCase(100, 50, "BUG-1", "5", 10, 0);
+
+        assertThat(results).isEmpty();
+        verify(apiClient).getResultsForCase(100, 50, "BUG-1", "5", 10, 0);
+    }
 }

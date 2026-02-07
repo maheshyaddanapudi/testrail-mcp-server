@@ -57,7 +57,10 @@ public class TestrailApiClient {
      * @return list of test cases
      */
     public List<TestCase> getCases(Integer projectId, Integer suiteId, Integer sectionId,
-                                    Integer limit, Integer offset) {
+                                    Integer limit, Integer offset, Long createdAfter,
+                                    Long createdBefore, String createdBy, String filter,
+                                    Integer milestoneId, String priorityId, String typeId,
+                                    Long updatedAfter, Long updatedBefore, String updatedBy) {
         log.debug("Getting test cases for project: {}", projectId);
 
         StringBuilder uri = new StringBuilder("get_cases/" + projectId);
@@ -77,6 +80,46 @@ public class TestrailApiClient {
         }
         if (offset != null) {
             uri.append(separator).append("offset=").append(offset);
+            separator = "&";
+        }
+        if (createdAfter != null) {
+            uri.append(separator).append("created_after=").append(createdAfter);
+            separator = "&";
+        }
+        if (createdBefore != null) {
+            uri.append(separator).append("created_before=").append(createdBefore);
+            separator = "&";
+        }
+        if (createdBy != null) {
+            uri.append(separator).append("created_by=").append(createdBy);
+            separator = "&";
+        }
+        if (filter != null) {
+            uri.append(separator).append("filter=").append(filter);
+            separator = "&";
+        }
+        if (milestoneId != null) {
+            uri.append(separator).append("milestone_id=").append(milestoneId);
+            separator = "&";
+        }
+        if (priorityId != null) {
+            uri.append(separator).append("priority_id=").append(priorityId);
+            separator = "&";
+        }
+        if (typeId != null) {
+            uri.append(separator).append("type_id=").append(typeId);
+            separator = "&";
+        }
+        if (updatedAfter != null) {
+            uri.append(separator).append("updated_after=").append(updatedAfter);
+            separator = "&";
+        }
+        if (updatedBefore != null) {
+            uri.append(separator).append("updated_before=").append(updatedBefore);
+            separator = "&";
+        }
+        if (updatedBy != null) {
+            uri.append(separator).append("updated_by=").append(updatedBy);
         }
 
         JsonNode response = get(uri.toString(), JsonNode.class);
@@ -115,6 +158,19 @@ public class TestrailApiClient {
     public void deleteCase(Integer caseId) {
         log.warn("Deleting test case: {}", caseId);
         post("delete_case/" + caseId, null, Void.class);
+    }
+
+    /**
+     * Copies cases to another section.
+     *
+     * @param sectionId the target section ID
+     * @param caseIds list of case IDs to copy
+     */
+    public void copyCasesToSection(Integer sectionId, List<Integer> caseIds) {
+        log.info("Copying {} cases to section: {}", caseIds.size(), sectionId);
+        Map<String, Object> data = new HashMap<>();
+        data.put("case_ids", caseIds);
+        post("copy_cases_to_section/" + sectionId, data, Void.class);
     }
 
     // ==================== Projects API ====================
@@ -441,6 +497,44 @@ public class TestrailApiClient {
         data.put("results", results);
         JsonNode response = post("add_results_for_cases/" + runId, data, JsonNode.class);
         return extractListDirect(response, TestResult.class);
+    }
+
+    /**
+     * Gets results for a test run and case combination.
+     *
+     * @param runId the run ID
+     * @param caseId the case ID
+     * @param defectsFilter optional defect filter
+     * @param statusId optional comma-separated status IDs
+     * @param limit optional result limit
+     * @param offset optional pagination offset
+     * @return list of results
+     */
+    public List<TestResult> getResultsForCase(Integer runId, Integer caseId, String defectsFilter,
+                                               String statusId, Integer limit, Integer offset) {
+        log.debug("Getting results for run: {} and case: {}", runId, caseId);
+
+        StringBuilder uri = new StringBuilder("get_results_for_case/" + runId + "/" + caseId);
+        String separator = "?";
+
+        if (defectsFilter != null) {
+            uri.append(separator).append("defects_filter=").append(defectsFilter);
+            separator = "&";
+        }
+        if (statusId != null) {
+            uri.append(separator).append("status_id=").append(statusId);
+            separator = "&";
+        }
+        if (limit != null) {
+            uri.append(separator).append("limit=").append(limit);
+            separator = "&";
+        }
+        if (offset != null) {
+            uri.append(separator).append("offset=").append(offset);
+        }
+
+        JsonNode response = get(uri.toString(), JsonNode.class);
+        return extractList(response, "results", TestResult.class);
     }
 
     // ==================== Sections API ====================

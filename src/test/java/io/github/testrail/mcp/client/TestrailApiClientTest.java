@@ -134,7 +134,7 @@ class TestrailApiClientTest {
                 .setBody(objectMapper.writeValueAsString(response))
                 .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-        List<TestCase> result = apiClient.getCases(1, null, null, null, null);
+        List<TestCase> result = apiClient.getCases(1, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getId()).isEqualTo(1);
@@ -147,7 +147,7 @@ class TestrailApiClientTest {
                 .setBody("{\"cases\": []}")
                 .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE));
 
-        apiClient.getCases(1, 5, 10, 50, 100);
+        apiClient.getCases(1, 5, 10, 50, 100, null, null, null, null, null, null, null, null, null, null);
 
         RecordedRequest request = mockWebServer.takeRequest();
         assertThat(request.getPath())

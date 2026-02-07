@@ -96,10 +96,32 @@ public class CasesTools {
             @InternalToolParam(description = "Maximum number of results to return (1-250, default: 250).", required = false, defaultValue = "250")
             Integer limit,
             @InternalToolParam(description = "Number of results to skip for pagination. Use with limit for paging through large result sets.", required = false, defaultValue = "0")
-            Integer offset
+            Integer offset,
+            @InternalToolParam(description = "Only return cases created after this Unix timestamp.", required = false)
+            Long createdAfter,
+            @InternalToolParam(description = "Only return cases created before this Unix timestamp.", required = false)
+            Long createdBefore,
+            @InternalToolParam(description = "Comma-separated list of user IDs who created the cases.", required = false)
+            String createdBy,
+            @InternalToolParam(description = "Full-text search filter on case title.", required = false)
+            String filter,
+            @InternalToolParam(description = "Filter by milestone ID.", required = false)
+            Integer milestoneId,
+            @InternalToolParam(description = "Comma-separated list of priority IDs to filter by (e.g. '3,4' for High and Critical).", required = false)
+            String priorityId,
+            @InternalToolParam(description = "Comma-separated list of type IDs to filter by.", required = false)
+            String typeId,
+            @InternalToolParam(description = "Only return cases updated after this Unix timestamp.", required = false)
+            Long updatedAfter,
+            @InternalToolParam(description = "Only return cases updated before this Unix timestamp.", required = false)
+            Long updatedBefore,
+            @InternalToolParam(description = "Comma-separated list of user IDs who last updated the cases.", required = false)
+            String updatedBy
     ) {
         log.info("Tool: get_test_cases called with projectId={}, suiteId={}, sectionId={}", projectId, suiteId, sectionId);
-        return apiClient.getCases(projectId, suiteId, sectionId, limit, offset);
+        return apiClient.getCases(projectId, suiteId, sectionId, limit, offset, createdAfter,
+                createdBefore, createdBy, filter, milestoneId, priorityId, typeId,
+                updatedAfter, updatedBefore, updatedBy);
     }
 
     @InternalTool(
@@ -132,18 +154,24 @@ public class CasesTools {
             Integer sectionId,
             @InternalToolParam(description = "The title/name of the test case. Should be descriptive and follow your team's naming conventions.")
             String title,
-            @InternalToolParam(description = "The test steps in plain text or TestRail's step format.", required = false)
+            @InternalToolParam(description = "The test steps in plain text (maps to custom_steps field in TestRail).", required = false)
             String steps,
-            @InternalToolParam(description = "The expected result(s) of the test. Describe what should happen when the test passes.", required = false)
+            @InternalToolParam(description = "The expected result(s) of the test (maps to custom_expected field in TestRail).", required = false)
             String expectedResult,
-            @InternalToolParam(description = "Any preconditions that must be met before executing this test.", required = false)
+            @InternalToolParam(description = "Any preconditions that must be met before executing this test (maps to custom_preconds field in TestRail).", required = false)
             String preconditions,
             @InternalToolParam(description = "Priority ID: 1=Low, 2=Medium, 3=High, 4=Critical", required = false)
             Integer priorityId,
             @InternalToolParam(description = "Test type ID (e.g., 1=Acceptance, 2=Accessibility, 3=Automated, etc.).", required = false)
             Integer typeId,
             @InternalToolParam(description = "Comma-separated list of references (e.g., JIRA tickets: 'PROJ-123, PROJ-456').", required = false)
-            String refs
+            String refs,
+            @InternalToolParam(description = "The estimated duration for the test (e.g., '30s', '1m 45s', '2h').", required = false)
+            String estimate,
+            @InternalToolParam(description = "The ID of the milestone to link to this test case.", required = false)
+            Integer milestoneId,
+            @InternalToolParam(description = "The ID of the template (field layout) to use for this test case.", required = false)
+            Integer templateId
     ) {
         log.info("Tool: add_test_case called for section={}, title={}", sectionId, title);
 
@@ -155,6 +183,9 @@ public class CasesTools {
         if (priorityId != null) data.put("priority_id", priorityId);
         if (typeId != null) data.put("type_id", typeId);
         if (refs != null) data.put("refs", refs);
+        if (estimate != null) data.put("estimate", estimate);
+        if (milestoneId != null) data.put("milestone_id", milestoneId);
+        if (templateId != null) data.put("template_id", templateId);
 
         return apiClient.addCase(sectionId, data);
     }
@@ -188,18 +219,24 @@ public class CasesTools {
             Integer caseId,
             @InternalToolParam(description = "New title for the test case (leave null to keep existing).", required = false)
             String title,
-            @InternalToolParam(description = "Updated test steps.", required = false)
+            @InternalToolParam(description = "Updated test steps (maps to custom_steps field in TestRail).", required = false)
             String steps,
-            @InternalToolParam(description = "Updated expected results.", required = false)
+            @InternalToolParam(description = "Updated expected results (maps to custom_expected field in TestRail).", required = false)
             String expectedResult,
-            @InternalToolParam(description = "Updated preconditions.", required = false)
+            @InternalToolParam(description = "Updated preconditions (maps to custom_preconds field in TestRail).", required = false)
             String preconditions,
             @InternalToolParam(description = "New priority ID: 1=Low, 2=Medium, 3=High, 4=Critical", required = false)
             Integer priorityId,
             @InternalToolParam(description = "New type ID.", required = false)
             Integer typeId,
             @InternalToolParam(description = "Updated references.", required = false)
-            String refs
+            String refs,
+            @InternalToolParam(description = "Updated estimated duration (e.g., '30s', '1m 45s', '2h').", required = false)
+            String estimate,
+            @InternalToolParam(description = "The ID of the milestone to link to this test case.", required = false)
+            Integer milestoneId,
+            @InternalToolParam(description = "The ID of the template (field layout) to use for this test case.", required = false)
+            Integer templateId
     ) {
         log.info("Tool: update_test_case called for caseId={}", caseId);
 
@@ -211,6 +248,9 @@ public class CasesTools {
         if (priorityId != null) data.put("priority_id", priorityId);
         if (typeId != null) data.put("type_id", typeId);
         if (refs != null) data.put("refs", refs);
+        if (estimate != null) data.put("estimate", estimate);
+        if (milestoneId != null) data.put("milestone_id", milestoneId);
+        if (templateId != null) data.put("template_id", templateId);
 
         return apiClient.updateCase(caseId, data);
     }
@@ -251,27 +291,68 @@ public class CasesTools {
     @InternalTool(
             name = "copy_cases_to_section",
             description = """
-                    Creates a copy of an existing test case, optionally in a different section.
-                    The cloned case can have modifications applied during cloning (new title, updated steps, etc.).
+                    Copies one or more existing test cases to a target section.
+                    This is a bulk operation that copies the specified cases as-is into the given section.
+                    
+                    **When to use:** Use this tool when you need to copy multiple test cases to another section
+                    or suite, reorganize test cases across sections, or duplicate a set of cases for a new feature area.
+                    
+                    **Might lead to:** get_cases (to verify the copies), get_sections (to find target section).
+                    
+                    **Example prompts:**
+                    - "Copy cases C1, C2, C3 to section 10"
+                    - "Duplicate these test cases into the regression section"
+                    - "Move cases 100, 200, 300 to section 50" (note: this copies, not moves)
+                    """,
+            category = "test-cases",
+            examples = {
+                    "execute_tool('copy_cases_to_section', {sectionId: 10, caseIds: '1,2,3'})",
+                    "execute_tool('copy_cases_to_section', {sectionId: 50, caseIds: '100,200,300'})"
+            },
+            keywords = {"copy", "duplicate", "bulk", "cases", "section", "move"}
+    )
+    public OperationResult copyCasesToSection(
+            @InternalToolParam(description = "The ID of the target section to copy the cases into.")
+            Integer sectionId,
+            @InternalToolParam(description = "Comma-separated list of case IDs to copy (e.g. '1,2,3').")
+            String caseIds
+    ) {
+        log.info("Tool: copy_cases_to_section called for sectionId={}, caseIds={}", sectionId, caseIds);
+
+        List<Integer> caseIdList = new java.util.ArrayList<>();
+        for (String caseIdStr : caseIds.split(",")) {
+            caseIdList.add(Integer.parseInt(caseIdStr.trim()));
+        }
+
+        apiClient.copyCasesToSection(sectionId, caseIdList);
+        return OperationResult.success("Successfully copied " + caseIdList.size() + " case(s) to section " + sectionId + ".");
+    }
+
+    @InternalTool(
+            name = "clone_case",
+            description = """
+                    Creates a deep clone of an existing test case, optionally in a different section,
+                    with the ability to modify fields during cloning (new title, updated steps, etc.).
+                    Unlike copy_cases_to_section (which bulk-copies as-is), this tool clones a single case
+                    and allows customization of the clone.
                     
                     **When to use:** Use this tool when you need to create a similar test case with minor variations,
-                    copy a test case to a different section, create a template-based test case,
-                    or duplicate a test case for different test data scenarios.
+                    create a template-based test case, or duplicate a test case for different test data scenarios.
                     
-                    **Might lead to:** get_test_case (to view cloned case), update_test_case (for additional modifications),
+                    **Might lead to:** get_case (to view cloned case), update_case (for additional modifications),
                     add_run (to include cloned case in a test run).
                     
                     **Example prompts:**
                     - "Clone test case C123"
-                    - "Copy case 456 to section 10"
+                    - "Clone case 456 to section 10 with a new title"
                     - "Duplicate test case C789 and change the title"
                     """,
             category = "test-cases",
             examples = {
-                    "execute_tool('copy_cases_to_section', {sourceCaseId: 123})",
-                    "execute_tool('copy_cases_to_section', {sourceCaseId: 456, targetSectionId: 10, newTitle: 'Modified test case'})"
+                    "execute_tool('clone_case', {sourceCaseId: 123})",
+                    "execute_tool('clone_case', {sourceCaseId: 456, targetSectionId: 10, newTitle: 'Modified test case'})"
             },
-            keywords = {"clone", "copy", "duplicate", "replicate", "case", "template"}
+            keywords = {"clone", "duplicate", "replicate", "case", "template", "deep-copy"}
     )
     public TestCase cloneTestCase(
             @InternalToolParam(description = "The ID of the test case to clone.")

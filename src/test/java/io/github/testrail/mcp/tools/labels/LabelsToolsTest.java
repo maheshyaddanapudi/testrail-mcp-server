@@ -56,12 +56,16 @@ class LabelsToolsTest {
     void testUpdateLabel() {
         Label label = new Label();
         label.setId(1);
-        Map<String, Object> data = Map.of("title", "Updated");
-        when(apiClient.updateLabel(1, data)).thenReturn(label);
+        Map<String, Object> expectedData = Map.of("project_id", 5, "title", "Updated");
+        when(apiClient.updateLabel(eq(1), argThat(map ->
+                map.get("project_id").equals(5) && map.get("title").equals("Updated")
+        ))).thenReturn(label);
 
-        Label result = labelsTools.updateLabel(1, data);
+        Label result = labelsTools.updateLabel(1, 5, "Updated");
 
         assertThat(result.getId()).isEqualTo(1);
-        verify(apiClient).updateLabel(1, data);
+        verify(apiClient).updateLabel(eq(1), argThat(map ->
+                map.get("project_id").equals(5) && map.get("title").equals("Updated")
+        ));
     }
 }
