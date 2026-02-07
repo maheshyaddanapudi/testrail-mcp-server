@@ -105,7 +105,7 @@ For the MCP server configuration to take effect, you must **fully quit and resta
 
 ## 7. Verify the Integration
 
-Once Cursor has restarted, you can verify the integration by having a conversation with `@testrail`. Here are two example flows, one for browsing and one for searching.
+Once Cursor has restarted, you can verify the integration by having a conversation with `@testrail`. Here are a few example flows.
 
 ### Example 1: Browse-Based Discovery
 
@@ -148,6 +148,20 @@ This path is faster when you know what you want to do.
 3.  **Execute the tool.**
     > **Cursor:** _(Now has enough information. It calls `execute_tool` with the name `add_case` and the parameters `{section_id: 42, title: "Verify login with biometrics", priority_id: 1}`. It then confirms the new test case was created.)_
 
+### Example 3: Advanced Query - Chaining Multiple Tools
+
+This example demonstrates the server's true power, as the AI assistant chains multiple tools together to answer a complex, time-based question.
+
+> **You:** `@testrail give me all test failures within the last 24 hours for the "Platform Engineering" project.`
+
+Behind the scenes, Cursor will perform a series of steps:
+
+1.  **Find Project ID:** It calls `get_projects` to find the project named "Platform Engineering" and get its ID.
+2.  **Calculate Timestamp:** It calculates the UNIX timestamp for 24 hours ago.
+3.  **Find Recent Runs:** It calls `get_runs` using the project ID and the `created_after` parameter with the timestamp it just calculated.
+4.  **Aggregate Failures:** For each run returned, it calls `get_results_for_run` with the `status_id` set to `5` (Failed).
+5.  **Synthesize and Respond:** Finally, it collects all the failed results from all the recent runs and presents them to you in a summarized, readable format.
+
 If you can complete these flows, your TestRail MCP server is successfully integrated! 🎉
 
 ---
@@ -158,4 +172,3 @@ If you can complete these flows, your TestRail MCP server is successfully integr
 - **Authentication errors**: Verify that your `TESTRAIL_URL`, `TESTRAIL_USERNAME`, and `TESTRAIL_API_KEY` are correct.
 - **No response from `@testrail`**: Ensure you have restarted Cursor after configuring `mcp.json`.
 - **Build failures**: Make sure you have JDK 17+ installed and that you are in the project's root directory when running the build command.
-
