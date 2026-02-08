@@ -249,14 +249,15 @@ export MCP_MODE=true
 export TESTRAIL_URL="https://fake-testrail.example.com"
 export TESTRAIL_USERNAME="test@example.com"
 export TESTRAIL_API_KEY="fake-api-key-12345"
-export TESTRAIL_LOG_LEVEL=WARN
+export TESTRAIL_LOG_LEVEL=INFO
 
 log_info "Environment: MCP_MODE=$MCP_MODE, TESTRAIL_URL=$TESTRAIL_URL"
 log_info "Credentials are intentionally fake (testing MCP plumbing, not TestRail API)"
 
 # Launch server as a coprocess — gives us bidirectional stdin/stdout pipes
+# Stderr is redirected to a log file for startup detection
 coproc MCP_SERVER {
-    exec java -jar "$JAR_FILE" 2>"$STDERR_LOG"
+    java -jar "$JAR_FILE" 2>"$STDERR_LOG"
 }
 
 # Save FDs and PID immediately (coproc vars unset when process exits)
