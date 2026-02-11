@@ -90,6 +90,11 @@ log_detail() { echo -e "${DIM}        $*${NC}"; }
 cleanup() {
     log_info "Cleaning up..."
 
+    # Kill tail process if running
+    if [[ -n "$TAIL_PID" ]] && kill -0 "$TAIL_PID" 2>/dev/null; then
+        kill "$TAIL_PID" 2>/dev/null || true
+    fi
+
     # Close write FD → server stdin gets EOF → MCP_MODE graceful shutdown
     if [[ -n "$MCP_WRITE_FD" ]]; then
         eval "exec ${MCP_WRITE_FD}>&-" 2>/dev/null || true
@@ -138,7 +143,25 @@ send_request() {
 
     if [[ "$expect_response" == "true" ]]; then
         local response=""
-        if read -t "$REQUEST_TIMEOUT" -r response <&"$MCP_READ_FD"; then
+        local line=""
+        local start_time=$SECONDS
+        local elapsed=0
+        
+        # Read lines until we find a JSON-RPC response (starts with {"jsonrpc")
+        # Skip log lines (which don't start with {)
+        while [[ $elapsed -lt $REQUEST_TIMEOUT ]]; do
+            if read -t 1 -r line <&"$MCP_READ_FD"; then
+                # Check if this is a JSON-RPC response
+                if [[ "$line" == *'"jsonrpc"'* ]]; then
+                    response="$line"
+                    break
+                fi
+                # Otherwise it's a log line, skip it and continue reading
+            fi
+            elapsed=$((SECONDS - start_time))
+        done
+        
+        if [[ -n "$response" ]]; then
             echo "$response"
         else
             echo "TIMEOUT_ERROR: No response within ${REQUEST_TIMEOUT}s"
@@ -255,9 +278,23 @@ log_info "Environment: MCP_MODE=$MCP_MODE, TESTRAIL_URL=$TESTRAIL_URL"
 log_info "Credentials are intentionally fake (testing MCP plumbing, not TestRail API)"
 
 # Launch server as a coprocess — gives us bidirectional stdin/stdout pipes
-# Stderr is redirected to a log file for startup detection
+# Use a wrapper script to redirect stderr at process level (not coprocess level)
+# This prevents bash coprocess from interfering with Java's stdin/stdout
+WRAPPER_SCRIPT="$TMPDIR/mcp-wrapper.sh"
+cat > "$WRAPPER_SCRIPT" << WRAPPER_EOF
+#!/bin/bash
+exec 2>"$STDERR_LOG"
+exec java -jar "$JAR_FILE"
+WRAPPER_EOF
+chmod +x "$WRAPPER_SCRIPT"
+
+# Start background tail to monitor stderr
+tail -f "$STDERR_LOG" 2>/dev/null &
+TAIL_PID=$!
+
+# Launch via wrapper (stderr redirection happens inside wrapper, not in coprocess)
 coproc MCP_SERVER {
-    java -jar "$JAR_FILE" 2>"$STDERR_LOG"
+    exec "$WRAPPER_SCRIPT"
 }
 
 # Save FDs and PID immediately (coproc vars unset when process exits)
