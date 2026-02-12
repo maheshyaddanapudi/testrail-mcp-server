@@ -175,7 +175,6 @@ Set the following environment variables before running the server:
 export TESTRAIL_URL="https://yourcompany.testrail.io"
 export TESTRAIL_USERNAME="your.email@company.com"
 export TESTRAIL_API_KEY="your-api-key-here"
-export MCP_MODE="true"  # For Cursor integration
 ```
 
 ## Cursor Integration
@@ -192,7 +191,6 @@ Create or edit `~/.cursor/mcp.json`:
         "/absolute/path/to/testrail-mcp-server.jar"
       ],
       "env": {
-        "MCP_MODE": "true",
         "TESTRAIL_URL": "https://yourcompany.testrail.io",
         "TESTRAIL_USERNAME": "your.email@company.com",
         "TESTRAIL_API_KEY": "your-api-key"

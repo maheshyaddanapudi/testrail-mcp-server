@@ -5,11 +5,11 @@
 # ──────────────────────────────────────────────────────────────────────────────
 #
 # Builds the project from scratch and verifies the MCP server works end-to-end
-# in stdio mode (MCP_MODE=true) using JSON-RPC 2.0 over stdin/stdout.
+# in stdio mode using JSON-RPC 2.0 over stdin/stdout.
 #
 # What it tests:
 #   1. Full Gradle build (clean build)
-#   2. Server startup in MCP_MODE=true (stdio transport, stdin lifecycle)
+#   2. Server startup in stdio mode (automatic lifecycle management)
 #   3. MCP protocol handshake (initialize / initialized)
 #   4. tools/list — verifies only the 4 gateway tools are exposed
 #   5. search_tools — Lucene-based natural language tool discovery
@@ -95,7 +95,7 @@ cleanup() {
         kill "$TAIL_PID" 2>/dev/null || true
     fi
 
-    # Close write FD → server stdin gets EOF → MCP_MODE graceful shutdown
+    # Close write FD → server stdin gets EOF → graceful shutdown
     if [[ -n "$MCP_WRITE_FD" ]]; then
         eval "exec ${MCP_WRITE_FD}>&-" 2>/dev/null || true
     fi
@@ -266,15 +266,13 @@ fi
 
 # ─── Step 1: Start MCP Server ────────────────────────────────────────────────
 
-log_step "1" "Start MCP server in stdio mode (MCP_MODE=true)"
-
-export MCP_MODE=true
+log_step "1" "Start MCP server in stdio mode"
 export TESTRAIL_URL="https://fake-testrail.example.com"
 export TESTRAIL_USERNAME="test@example.com"
 export TESTRAIL_API_KEY="fake-api-key-12345"
 export TESTRAIL_LOG_LEVEL=INFO
 
-log_info "Environment: MCP_MODE=$MCP_MODE, TESTRAIL_URL=$TESTRAIL_URL"
+log_info "Environment: TESTRAIL_URL=$TESTRAIL_URL"
 log_info "Credentials are intentionally fake (testing MCP plumbing, not TestRail API)"
 
 # Launch server as a coprocess — gives us bidirectional stdin/stdout pipes
@@ -331,7 +329,7 @@ fi
 
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
 TESTS_PASSED=$((TESTS_PASSED + 1))
-log_pass "Server started successfully in MCP_MODE=true (stdio transport active)"
+log_pass "Server started successfully (stdio transport active)"
 
 # ─── Step 2b: MCP Protocol Handshake ─────────────────────────────────────────
 
