@@ -25,3 +25,6 @@ logs/
 
 # Test output
 test-output/
+
+# GitHub Actions - branch-specific workflows
+.github/workflows/
