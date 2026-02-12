@@ -79,7 +79,6 @@ Now, you need to tell Cursor how to run the TestRail MCP server.
         "/absolute/path/to/your/testrail-mcp-server/build/libs/testrail-mcp-server-1.0.0.jar"
       ],
       "env": {
-        "MCP_MODE": "true",
         "TESTRAIL_URL": "https://yourcompany.testrail.io",
         "TESTRAIL_USERNAME": "your.email@company.com",
         "TESTRAIL_API_KEY": "your-api-key"
@@ -93,7 +92,7 @@ Now, you need to tell Cursor how to run the TestRail MCP server.
 - Replace `/absolute/path/to/your/` with the **full, absolute path** to the project directory on your machine.
 - Ensure the JAR file version in the path matches the one you built.
 - The `env` section in `mcp.json` is an alternative to the `.env` file. You can use either, but the `mcp.json` configuration will override system environment variables.
-- **`MCP_MODE: "true"`** is crucial. It ensures the server process is properly managed by Cursor and prevents orphaned processes when Cursor restarts.
+- The server automatically manages its lifecycle and shuts down gracefully when Cursor disconnects.
 
 ---
 

@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <!-- Console appender that writes to STDERR (required for MCP STDIO transport) -->
     <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
         <target>System.err</target>
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+
+    <!-- Root logger at WARN level -->
     <root level="WARN">
         <appender-ref ref="STDERR"/>
     </root>
+
+    <!-- Application logger with configurable level -->
     <logger name="io.github.testrail.mcp" level="${TESTRAIL_LOG_LEVEL:-INFO}"/>
 </configuration>

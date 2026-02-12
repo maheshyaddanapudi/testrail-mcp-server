@@ -32,7 +32,7 @@ repositories {
 }
 
 ext {
-    set('springAiVersion', '1.0.0-M6')
+    set('springAiVersion', '1.1.2')
 }
 
 dependencies {
@@ -41,7 +41,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     // Spring AI MCP Server
-    implementation 'org.springframework.ai:spring-ai-mcp-server-spring-boot-starter'
+    implementation 'org.springframework.ai:spring-ai-starter-mcp-server'
 
     // HTTP Client for TestRail API calls
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
