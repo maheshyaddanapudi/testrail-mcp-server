@@ -11,11 +11,10 @@ A Spring Boot MCP (Model Context Protocol) Server that enables AI assistants lik
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Cursor Integration](#cursor-integration)
-- [Available Tools](#available-tools)
+- [The 4-Tool Gateway](#the-4-tool-gateway)
 - [Example Use Cases](#example-use-cases)
 - [Development](#development)
 - [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
 - [Documentation](#documentation)
 - [License](#license)
 
@@ -26,19 +25,19 @@ For detailed documentation with comprehensive Mermaid diagrams, see the `docs/` 
 | Document | Description |
 |---|---|
 | [Architecture](docs/ARCHITECTURE.md) | Detailed architecture with class diagrams, component diagrams, and data flow |
-| [Tools Reference](docs/TOOLS.md) | Complete reference for all 101 internal tools with parameters and examples |
+| [Tools Reference](docs/TOOLS.md) | Gateway tools, discovery paths, and tool categories |
 | [Security](docs/SECURITY.md) | Security architecture, threat model, and credential management |
 | [Integration Guide](docs/INTEGRATION.md) | Step-by-step Cursor IDE integration and troubleshooting |
 
 ## Features
 
-- **101 TestRail Tools**: Complete coverage of TestRail API operations, accessible via a 4-tool gateway.
+- **103 TestRail Tools**: Complete coverage of TestRail API operations, accessible via a 4-tool gateway.
 - **Dual Discovery Paths**: Find tools via natural language search (`search_tools`) or by browsing a structured catalog (`get_categories`, `get_tools_by_category`).
 - **Searchable Tools**: A powerful `search_tools` method allows the LLM to find the right tool for the job using natural language.
 - **Secure by Design**: API credentials never leave your local machine.
 - **Permission Control**: Cursor asks for confirmation before executing each tool.
 - **Rich Tool Metadata**: All internal tools are annotated with detailed descriptions, categories, keywords, and examples for optimal LLM understanding.
-- **90% Test Coverage**: Comprehensive test suite with JaCoCo enforcement.
+- **Enforced Coverage**: JaCoCo verification fails the build below 90% coverage.
 
 ## Architecture
 
@@ -59,7 +58,7 @@ flowchart TB
         Lucene[LuceneToolIndexService]
         Registry[InternalToolRegistry]
 
-        subgraph Tools["Internal Tools (101)"]
+        subgraph Tools["Internal Tools (103)"]
             CT[Cases Tools]
             PT[Projects Tools]
             RT[Runs Tools]
@@ -122,7 +121,7 @@ flowchart LR
             McpExposed[4-Tool Gateway]
         end
 
-        subgraph ToolsLayer["Internal Tools Layer (101)"]
+        subgraph ToolsLayer["Internal Tools Layer (103)"]
             direction LR
             CT[CasesTools]
             PT[ProjectsTools]
@@ -144,7 +143,7 @@ flowchart LR
 
 ## Security
 
-Your TestRail credentials **never leave your local machine** and are **never sent to the LLM**. The architecture is designed to expose only a 4-tool gateway to the LLM, keeping the 101 internal tool implementations and your credentials secure.
+Your TestRail credentials **never leave your local machine** and are **never sent to the LLM**. The architecture is designed to expose only a 4-tool gateway to the LLM, keeping the 103 internal tool implementations and your credentials secure.
 
 ## Prerequisites
 
@@ -158,7 +157,7 @@ Your TestRail credentials **never leave your local machine** and are **never sen
 
 1.  **Clone the Repository**
     ```bash
-    git clone https://github.com/yourusername/testrail-mcp-server.git
+    git clone https://github.com/maheshyaddanapudi/testrail-mcp-server.git
     cd testrail-mcp-server
     ```
 
@@ -166,6 +165,7 @@ Your TestRail credentials **never leave your local machine** and are **never sen
     ```bash
     ./gradlew build
     ```
+    The runnable jar is written to `build/libs/testrail-mcp-server.jar`.
 
 ## Configuration
 
@@ -188,7 +188,7 @@ Create or edit `~/.cursor/mcp.json`:
       "command": "java",
       "args": [
         "-jar",
-        "/absolute/path/to/testrail-mcp-server.jar"
+        "/absolute/path/to/testrail-mcp-server/build/libs/testrail-mcp-server.jar"
       ],
       "env": {
         "TESTRAIL_URL": "https://yourcompany.testrail.io",
@@ -202,10 +202,10 @@ Create or edit `~/.cursor/mcp.json`:
 
 ## The 4-Tool Gateway
 
-This server exposes a 4-tool gateway to the LLM, providing two discovery paths to the 101 internal tools:
+This server exposes a 4-tool gateway to the LLM, providing two discovery paths to the 103 internal tools:
 
 -   **Search Path**
-    -   `search_tools(query: string)`: Fuzzy-searches all 101 internal tools and returns a ranked list of matches.
+    -   `search_tools(query: string)`: Fuzzy-searches all 103 internal tools and returns a ranked list of matches.
 -   **Browse Path**
     -   `get_categories()`: Returns a list of all 19 tool categories (e.g., `test-cases`, `projects`).
     -   `get_tools_by_category(category: string)`: Returns all tools in a specific category.
@@ -220,8 +220,8 @@ This server exposes a 4-tool gateway to the LLM, providing two discovery paths t
 
 1.  **LLM calls `search_tools("find test cases in suite")`**
 2.  Server returns `get_cases` as a top result, with parameters `projectId`, `suiteId`, etc.
-3.  **LLM calls `execute_tool("get_project_by_name", {name: "Mobile App"})`** to get the project ID.
-4.  **LLM calls `execute_tool("get_suite_by_name", {projectId: 1, name: "User Authentication"})`** to get the suite ID.
+3.  **LLM calls `execute_tool("get_projects", {})`** and picks the "Mobile App" project ID.
+4.  **LLM calls `execute_tool("get_suites", {projectId: 1})`** and picks the "User Authentication" suite ID.
 5.  **LLM calls `execute_tool("get_cases", {projectId: 1, suiteId: 5})`** to get the test cases.
 
 ### Browse-Based Discovery
@@ -236,7 +236,7 @@ This server exposes a 4-tool gateway to the LLM, providing two discovery paths t
 
 ## Development
 
-The core of the system is the `@InternalTool` annotation, which is used to decorate all 101 internal TestRail tool methods. The `InternalToolRegistry` scans these annotations at startup to build a runtime registry. The `LuceneToolIndexService` then indexes this registry for fast, semantic search.
+The core of the system is the `@InternalTool` annotation, which is used to decorate all 103 internal TestRail tool methods. The `InternalToolRegistry` scans these annotations at startup to build a runtime registry. The `LuceneToolIndexService` then indexes this registry for fast fuzzy keyword search.
 
 ## Testing
 
@@ -246,3 +246,6 @@ Run the full test suite with coverage verification:
 ./gradlew clean build
 ```
 
+## License
+
+No license file is included yet; all rights reserved unless a license is added.
