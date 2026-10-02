@@ -1,20 +1,20 @@
 # Tools Reference
 
-This document provides a complete reference for all 101 internal tools available in the TestRail MCP Server. These tools are not directly exposed to the LLM; instead, they are discovered and executed via the `search_tools` and `execute_tool` gateway.
+This document provides an overview of the 103 internal tools available in the TestRail MCP Server. These tools are not directly exposed to the LLM; instead, they are discovered and executed via the `search_tools` and `execute_tool` gateway.
 
 ## Tool Discovery and Execution
 
-The TestRail MCP Server exposes a 4-tool gateway to the LLM, providing two distinct paths for discovering the 101 internal tools:
+The TestRail MCP Server exposes a 4-tool gateway to the LLM, providing two distinct paths for discovering the 103 internal tools:
 
 -   **Search Path**
-    -   `search_tools(query: string)`: Fuzzy-searches all 101 internal tools and returns a ranked list of matches.
+    -   `search_tools(query: string)`: Fuzzy-searches all 103 internal tools and returns a ranked list of matches.
 -   **Browse Path**
     -   `get_categories()`: Returns a list of all 19 tool categories (e.g., `test-cases`, `projects`).
     -   `get_tools_by_category(category: string)`: Returns all tools in a specific category.
 -   **Execution**
     -   `execute_tool(toolName: string, parameters: map)`: Executes a specific internal tool by name.
 
-This architecture allows the LLM to discover the right tool for the job without being overwhelmed by the full list of 101 tools, supporting both directed searching and open-ended exploration.
+This architecture allows the LLM to discover the right tool for the job without being overwhelmed by the full list of 103 tools, supporting both directed searching and open-ended exploration.
 
 ### Search-Based Discovery Flow
 
@@ -105,4 +105,4 @@ sequenceDiagram
 
 ## Complete Tool List
 
-*(A complete, auto-generated list of all 101 tools with their parameters and descriptions will be added here in a future update.)*
+*(A complete, auto-generated list of all 103 tools with their parameters and descriptions will be added here in a future update.)*

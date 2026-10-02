@@ -32,7 +32,7 @@ flowchart TB
         Lucene[LuceneToolIndexService]
         Registry[InternalToolRegistry]
 
-        subgraph Tools["Internal Tools (101)"]
+        subgraph Tools["Internal Tools (103)"]
             CT[Cases Tools]
             PT[Projects Tools]
             RT[Runs Tools]
@@ -72,7 +72,7 @@ flowchart TB
 
 ## Tool Discovery and Execution
 
-The server does **not** expose all 101 internal tools directly to the MCP client. Doing so would consume a massive number of tokens in the LLM's context window, making it inefficient and expensive. Instead, it exposes a **4-tool gateway** that provides two distinct paths for discovering the internal tools:
+The server does **not** expose all 103 internal tools directly to the MCP client. Doing so would consume a massive number of tokens in the LLM's context window, making it inefficient and expensive. Instead, it exposes a **4-tool gateway** that provides two distinct paths for discovering the internal tools:
 
 1.  **Search Path**: A natural language, fuzzy-search endpoint (`search_tools`).
 2.  **Browse Path**: A structured, categorical browsing endpoint (`get_categories` and `get_tools_by_category`).
@@ -101,7 +101,7 @@ flowchart TD
             Lucene[LuceneToolIndexService]
             Registry[InternalToolRegistry]
         end
-        subgraph InternalTools["Internal Tools (101)"]
+        subgraph InternalTools["Internal Tools (103)"]
             GetCase[get_case]
             AddRun[add_run]
             UpdateProject[update_project]
@@ -152,7 +152,7 @@ flowchart TB
     end
 
     subgraph Application["Application Layer"]
-        subgraph Tools["Internal Tool Components (101)"]
+        subgraph Tools["Internal Tool Components (103)"]
             direction LR
             CasesTools["CasesTools"]
             ProjectsTools["ProjectsTools"]
